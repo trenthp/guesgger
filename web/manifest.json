@@ -1,0 +1,10 @@
+{
+  "name": "Theme Park Runner",
+  "short_name": "TPRunner",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0175C2",
+  "theme_color": "#0175C2",
+  "description": "Navigate from the parking lot to the theme park entrance!",
+  "orientation": "portrait"
+}
