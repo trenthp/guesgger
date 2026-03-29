@@ -1,0 +1,1 @@
+ C:\\Users\\bette\\Documents\\GitHub\\guesgger\\build\\web\\manifest.json:  C:\\Users\\bette\\Documents\\GitHub\\guesgger\\web\\index.html C:\\Users\\bette\\Documents\\GitHub\\guesgger\\web\\manifest.json

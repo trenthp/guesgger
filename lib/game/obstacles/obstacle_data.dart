@@ -30,6 +30,7 @@ class ObstacleData {
   final bool requiresJump; // must jump to avoid (e.g., speed bumps)
   final bool spansAllLanes; // blocks all lanes (jump-only)
   final bool blocksJump; // can't jump over — must go through opening
+  final String spriteAssetName; // filename (without .png) in assets/images/obstacles/
 
   const ObstacleData({
     required this.type,
@@ -41,6 +42,7 @@ class ObstacleData {
     this.requiresJump = false,
     this.spansAllLanes = false,
     this.blocksJump = false,
+    this.spriteAssetName = '',
   });
 
   // Parking lot obstacles
@@ -51,6 +53,7 @@ class ObstacleData {
     height: 1.8,
     color: Color(0xFFD32F2F),
     accentColor: Color(0xFF212121),
+    spriteAssetName: 'car',
   );
 
   static const shoppingCart = ObstacleData(
@@ -60,6 +63,7 @@ class ObstacleData {
     height: 1.4,
     color: Color(0xFF9E9E9E),
     accentColor: Color(0xFF616161),
+    spriteAssetName: 'shopping_cart',
   );
 
   static const speedBump = ObstacleData(
@@ -71,6 +75,7 @@ class ObstacleData {
     accentColor: Color(0xFF212121),
     requiresJump: true,
     spansAllLanes: true,
+    spriteAssetName: 'speed_bump',
   );
 
   // Security obstacles
@@ -81,6 +86,7 @@ class ObstacleData {
     height: 1.5,
     color: Color(0xFFFF6F00),
     accentColor: Color(0xFFFFFFFF),
+    spriteAssetName: 'barricade',
   );
 
   static const metalDetector = ObstacleData(
@@ -90,6 +96,7 @@ class ObstacleData {
     height: 2.5,
     color: Color(0xFF37474F),
     accentColor: Color(0xFF4CAF50),
+    spriteAssetName: 'metal_detector',
   );
 
   static const bagCheckStation = ObstacleData(
@@ -99,6 +106,7 @@ class ObstacleData {
     height: 1.6,
     color: Color(0xFF455A64),
     accentColor: Color(0xFF90A4AE),
+    spriteAssetName: 'bag_check_station',
   );
 
   static const securityGate = ObstacleData(
@@ -110,6 +118,7 @@ class ObstacleData {
     accentColor: Color(0xFF4CAF50),
     spansAllLanes: true,
     blocksJump: true,
+    spriteAssetName: 'security_gate',
   );
 
   // Shop obstacles
@@ -120,6 +129,7 @@ class ObstacleData {
     height: 2.2,
     color: Color(0xFF7B1FA2),
     accentColor: Color(0xFFE1BEE7),
+    spriteAssetName: 'merchandise_rack',
   );
 
   static const foodCart = ObstacleData(
@@ -129,6 +139,7 @@ class ObstacleData {
     height: 1.6,
     color: Color(0xFFE65100),
     accentColor: Color(0xFFFFCC80),
+    spriteAssetName: 'food_cart',
   );
 
   static const bench = ObstacleData(
@@ -140,6 +151,7 @@ class ObstacleData {
     accentColor: Color(0xFF8D6E63),
     requiresJump: true,
     spansAllLanes: true,
+    spriteAssetName: 'bench',
   );
 
   // Ticket booth obstacles
@@ -152,6 +164,7 @@ class ObstacleData {
     accentColor: Color(0xFFFFD54F),
     requiresJump: true,
     spansAllLanes: true,
+    spriteAssetName: 'rope_line',
   );
 
   static const turnstile = ObstacleData(
@@ -161,6 +174,7 @@ class ObstacleData {
     height: 1.8,
     color: Color(0xFF78909C),
     accentColor: Color(0xFFB0BEC5),
+    spriteAssetName: 'turnstile',
   );
 
   static const ticketKiosk = ObstacleData(
@@ -170,5 +184,6 @@ class ObstacleData {
     height: 2.4,
     color: Color(0xFF1565C0),
     accentColor: Color(0xFF42A5F5),
+    spriteAssetName: 'ticket_kiosk',
   );
 }

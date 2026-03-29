@@ -19,3 +19,12 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/obstacles/
+    - assets/images/player/
+    - assets/images/npcs/
+    - assets/images/backgrounds/parking_lot/
+    - assets/images/backgrounds/security/
+    - assets/images/backgrounds/shops/
+    - assets/images/backgrounds/ticket_booths/
+    - assets/images/ui/

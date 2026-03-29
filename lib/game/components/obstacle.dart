@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../config/game_config.dart';
 import '../obstacles/obstacle_data.dart';
 import '../perspective.dart';
+import '../sprites/sprite_manager.dart';
 
 Color _darken(Color c, double amount) {
   final hsl = HSLColor.fromColor(c);
@@ -25,6 +26,7 @@ class ObstacleComponent extends Component {
   final int lane; // -1, 0, 1
   double worldZ;
   final PerspectiveProjection perspective;
+  final SpriteManager? spriteManager;
 
   /// For securityGate: which lane is walled off (-1, 0, or 1).
   /// The other two lanes have doorways. Null for all other obstacle types.
@@ -36,6 +38,7 @@ class ObstacleComponent extends Component {
     required this.worldZ,
     required this.perspective,
     this.blockedLane,
+    this.spriteManager,
   });
 
   double get worldX => lane * GameConfig.laneWidth;
@@ -130,6 +133,12 @@ class ObstacleComponent extends Component {
       renderCx = perspective.screenWidth / 2;
     }
 
+    // Try sprite rendering first
+    if (_tryRenderSprite(canvas, cx, baseY, w, h, scale, renderW, renderCx)) {
+      return;
+    }
+
+    // Fallback: procedural rendering
     switch (data.type) {
       case ObstacleType.car:
         _draw3DBox(
@@ -472,6 +481,59 @@ class ObstacleComponent extends Component {
             labelY - textPainter.height),
       );
     }
+  }
+
+  /// Attempt to render using a sprite asset. Returns true if sprite was rendered.
+  bool _tryRenderSprite(Canvas canvas, double cx, double baseY, double w,
+      double h, double scale, double renderW, double renderCx) {
+    if (spriteManager == null) return false;
+    if (data.spriteAssetName.isEmpty) return false;
+
+    // Security gate is complex (multi-lane), skip sprite for now unless
+    // a dedicated sprite exists
+    if (data.type == ObstacleType.securityGate) {
+      // For security gate, we'd need separate blocked/open lane sprites
+      // Fall back to procedural for now
+      return false;
+    }
+
+    final sprite = spriteManager!.getObstacleSprite(data.spriteAssetName);
+    if (sprite == null) return false;
+
+    // Determine render size and position
+    final spriteW = data.spansAllLanes ? renderW : w;
+    final spriteCx = data.spansAllLanes ? renderCx : cx;
+
+    // Render sprite anchored at bottom-center
+    sprite.render(
+      canvas,
+      position: Vector2(spriteCx - spriteW / 2, baseY - h),
+      size: Vector2(spriteW, h),
+    );
+
+    // Still show label when close
+    if (scale > 0.25) {
+      final labelY = baseY - h - 4;
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: data.label,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: (8 * scale).clamp(8, 16),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(spriteCx - textPainter.width / 2,
+            labelY - textPainter.height),
+      );
+    }
+
+    return true;
   }
 
   void _renderSecurityGate(Canvas canvas, double renderCx, double baseY,

@@ -8,6 +8,7 @@ class GameConfig {
   static const double jumpHeight = 2.5;
   static const double laneSwitchDuration = 0.15;
   static const double invulnerabilityDuration = 2.0;
+  static const double stunDuration = 0.8; // pause after hit before getting back up
 
   // Camera / Perspective
   static const double focalLengthFactor = 0.55; // multiplied by screen height

@@ -9,6 +9,8 @@ class WorldState {
   double currentSpeed = GameConfig.baseSpeed;
   bool isInvulnerable = false;
   double invulnerabilityTimer = 0;
+  bool isStunned = false;
+  double stunTimer = 0;
   GameStatus status = GameStatus.playing;
 
   /// Speed multiplier from zone.
@@ -20,9 +22,19 @@ class WorldState {
   void update(double dt) {
     if (status != GameStatus.playing) return;
 
-    final effectiveSpeed = currentSpeed * zoneSpeedMultiplier;
-    distanceTraveled += effectiveSpeed * dt;
-    score = distanceTraveled.toInt();
+    if (!isStunned) {
+      final effectiveSpeed = currentSpeed * zoneSpeedMultiplier;
+      distanceTraveled += effectiveSpeed * dt;
+      score = distanceTraveled.toInt();
+    }
+
+    if (isStunned) {
+      stunTimer -= dt;
+      if (stunTimer <= 0) {
+        isStunned = false;
+        stunTimer = 0;
+      }
+    }
 
     if (isInvulnerable) {
       invulnerabilityTimer -= dt;
@@ -41,6 +53,8 @@ class WorldState {
   void onHit() {
     if (isInvulnerable) return;
     lives--;
+    isStunned = true;
+    stunTimer = GameConfig.stunDuration;
     isInvulnerable = true;
     invulnerabilityTimer = GameConfig.invulnerabilityDuration;
     if (lives <= 0) {
@@ -55,6 +69,8 @@ class WorldState {
     currentSpeed = GameConfig.baseSpeed;
     isInvulnerable = false;
     invulnerabilityTimer = 0;
+    isStunned = false;
+    stunTimer = 0;
     status = GameStatus.playing;
     zoneSpeedMultiplier = 1.0;
     onReverseWalkway = false;

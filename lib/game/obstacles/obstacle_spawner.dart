@@ -3,6 +3,7 @@ import 'dart:math';
 import '../../config/game_config.dart';
 import '../components/obstacle.dart';
 import '../perspective.dart';
+import '../sprites/sprite_manager.dart';
 import '../zones/zone_manager.dart';
 import 'obstacle_data.dart';
 
@@ -11,6 +12,7 @@ class ObstacleSpawner {
   final ZoneManager zoneManager;
   final PerspectiveProjection perspective;
   final void Function(ObstacleComponent) onSpawn;
+  final SpriteManager? spriteManager;
   final Random _random = Random();
 
   double _spawnTimer = 0;
@@ -21,6 +23,7 @@ class ObstacleSpawner {
     required this.zoneManager,
     required this.perspective,
     required this.onSpawn,
+    this.spriteManager,
   });
 
   void update(double dt) {
@@ -36,6 +39,22 @@ class ObstacleSpawner {
               (zone.spawnIntervalMax - zone.spawnIntervalMin);
       _spawnTimer = _currentInterval;
     }
+  }
+
+  ObstacleComponent _createObstacle({
+    required ObstacleData data,
+    required int lane,
+    required double worldZ,
+    int? blockedLane,
+  }) {
+    return ObstacleComponent(
+      data: data,
+      lane: lane,
+      worldZ: worldZ,
+      perspective: perspective,
+      blockedLane: blockedLane,
+      spriteManager: spriteManager,
+    );
   }
 
   void _spawn() {
@@ -55,13 +74,11 @@ class ObstacleSpawner {
 
     if (data.spansAllLanes) {
       // Single obstacle in center lane (jump-only)
-      final obstacle = ObstacleComponent(
+      onSpawn(_createObstacle(
         data: data,
         lane: 0,
         worldZ: GameConfig.spawnDistance,
-        perspective: perspective,
-      );
-      onSpawn(obstacle);
+      ));
     } else {
       // Pick pattern
       final pattern = _random.nextDouble();
@@ -80,11 +97,10 @@ class ObstacleSpawner {
 
   void _spawnSecurityGate() {
     final blockedLane = _random.nextInt(3) - 1; // -1, 0, or 1
-    onSpawn(ObstacleComponent(
+    onSpawn(_createObstacle(
       data: ObstacleData.securityGate,
       lane: 0,
       worldZ: GameConfig.spawnDistance,
-      perspective: perspective,
       blockedLane: blockedLane,
     ));
     _timeSinceLastGate = 0;
@@ -92,11 +108,10 @@ class ObstacleSpawner {
 
   void _spawnSingle(ObstacleData data) {
     final lane = _random.nextInt(3) - 1;
-    onSpawn(ObstacleComponent(
+    onSpawn(_createObstacle(
       data: data,
       lane: lane,
       worldZ: GameConfig.spawnDistance,
-      perspective: perspective,
     ));
   }
 
@@ -104,11 +119,10 @@ class ObstacleSpawner {
     final lanes = [-1, 0, 1]..shuffle(_random);
     // Block two lanes, leave one free
     for (int i = 0; i < 2; i++) {
-      onSpawn(ObstacleComponent(
+      onSpawn(_createObstacle(
         data: data,
         lane: lanes[i],
         worldZ: GameConfig.spawnDistance,
-        perspective: perspective,
       ));
     }
   }
@@ -120,17 +134,15 @@ class ObstacleSpawner {
       lane2 = _random.nextInt(3) - 1;
     }
 
-    onSpawn(ObstacleComponent(
+    onSpawn(_createObstacle(
       data: data,
       lane: lane1,
       worldZ: GameConfig.spawnDistance,
-      perspective: perspective,
     ));
-    onSpawn(ObstacleComponent(
+    onSpawn(_createObstacle(
       data: data,
       lane: lane2,
       worldZ: GameConfig.spawnDistance + 15, // offset in depth
-      perspective: perspective,
     ));
   }
 

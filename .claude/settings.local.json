@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(flutter analyze:*)"
+      "Bash(flutter analyze:*)",
+      "Bash(curl -s \"https://kenney.nl/assets?q=car\")",
+      "WebFetch(domain:kenney.nl)",
+      "Read(//c/tmp/asset_processor/**)",
+      "Bash(dart run:*)",
+      "Bash(cp:*)"
     ]
   }
 }

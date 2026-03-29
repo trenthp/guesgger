@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../config/game_config.dart';
 import '../perspective.dart';
+import '../sprites/sprite_manager.dart';
 import '../zones/zone.dart';
 
 enum NpcType {
@@ -34,6 +35,7 @@ class NpcData {
 class NpcComponent extends Component {
   final NpcData data;
   final PerspectiveProjection perspective;
+  final SpriteManager? spriteManager;
   double worldZ;
   double _animTimer = 0;
 
@@ -41,6 +43,7 @@ class NpcComponent extends Component {
     required this.data,
     required this.perspective,
     required this.worldZ,
+    this.spriteManager,
   });
 
   double get worldX => data.lane * GameConfig.laneWidth;
@@ -79,6 +82,37 @@ class NpcComponent extends Component {
 
     if (scale < 0.05) return; // too small to see
 
+    // Try sprite rendering
+    if (spriteManager != null && spriteManager!.hasNpcSprites) {
+      final sprite = spriteManager!.getNpcFrame(
+        isStationary: data.type == NpcType.stationary,
+        animTime: _animTimer,
+      );
+      if (sprite != null) {
+        final spriteSize = 45 * scale;
+        // Flip horizontally for same-direction walkers (they face away)
+        if (data.type == NpcType.walkingSame) {
+          canvas.save();
+          canvas.translate(cx, 0);
+          canvas.scale(-1, 1);
+          sprite.render(
+            canvas,
+            position: Vector2(-spriteSize / 2, baseY - spriteSize),
+            size: Vector2(spriteSize, spriteSize),
+          );
+          canvas.restore();
+        } else {
+          sprite.render(
+            canvas,
+            position: Vector2(cx - spriteSize / 2, baseY - spriteSize),
+            size: Vector2(spriteSize, spriteSize),
+          );
+        }
+        return;
+      }
+    }
+
+    // Fallback: procedural rendering
     final bodyHeight = 28 * scale;
     final bodyWidth = 12 * scale;
     final headRadius = 6 * scale;
@@ -154,6 +188,7 @@ class NpcManager extends Component {
   final double Function() getSpeedMultiplier;
   final Zone Function() getCurrentZone;
   final Zone Function(double) getZoneAtDistance;
+  final SpriteManager? spriteManager;
 
   final List<NpcComponent> _npcs = [];
   List<NpcComponent> get npcs => _npcs;
@@ -195,6 +230,7 @@ class NpcManager extends Component {
     required this.getSpeedMultiplier,
     required this.getCurrentZone,
     required this.getZoneAtDistance,
+    this.spriteManager,
   });
 
   @override
@@ -302,6 +338,7 @@ class NpcManager extends Component {
       data: npcData,
       perspective: perspective,
       worldZ: spawnZ,
+      spriteManager: spriteManager,
     );
 
     _npcs.add(npc);

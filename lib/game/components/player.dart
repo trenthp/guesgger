@@ -6,9 +6,11 @@ import 'package:flutter/material.dart';
 import '../../config/game_config.dart';
 import '../../config/theme.dart';
 import '../perspective.dart';
+import '../sprites/sprite_manager.dart';
 
 class Player extends Component {
   final PerspectiveProjection perspective;
+  final SpriteManager? spriteManager;
 
   @override
   int get priority => 100000;
@@ -23,6 +25,7 @@ class Player extends Component {
   double _jumpHeight = 0;
 
   bool isInvulnerable = false;
+  bool isStunned = false;
   double _flashTimer = 0;
   double _runTimer = 0;
 
@@ -30,7 +33,7 @@ class Player extends Component {
   final List<_TrailPoint> _trail = [];
   double _trailTimer = 0;
 
-  Player({required this.perspective});
+  Player({required this.perspective, this.spriteManager});
 
   double get worldX => _worldX;
   double get jumpHeight => _jumpHeight;
@@ -120,8 +123,8 @@ class Player extends Component {
 
   @override
   void render(Canvas canvas) {
-    // Skip rendering every other "frame" when invulnerable
-    if (isInvulnerable && (sin(_flashTimer * pi) > 0.5)) {
+    // Skip rendering every other "frame" when invulnerable (but not during stun - show solidly)
+    if (isInvulnerable && !isStunned && (sin(_flashTimer * pi) > 0.5)) {
       return;
     }
 
@@ -160,6 +163,12 @@ class Player extends Component {
       }
     }
 
+    // Try sprite rendering
+    if (_tryRenderSprite(canvas, cx, baseY, s)) {
+      return;
+    }
+
+    // Fallback: procedural rendering
     // Running bob animation
     final runBob = sin(_runTimer * 12) * 1.5 * s;
     final armSwing = sin(_runTimer * 12) * 0.3;
@@ -361,6 +370,45 @@ class Player extends Component {
           ..strokeWidth = 2 * s,
       );
     }
+  }
+
+  bool _tryRenderSprite(Canvas canvas, double cx, double baseY, double s) {
+    if (spriteManager == null || !spriteManager!.hasPlayerSprites) return false;
+
+    final sprite = spriteManager!.getPlayerFrame(
+      isRunning: !isJumping && !isStunned,
+      isJumping: isJumping,
+      isHit: isStunned,
+      animTime: _runTimer,
+    );
+    if (sprite == null) return false;
+
+    // Render sprite centered at position, anchored at bottom-center
+    final spriteSize = 50 * s;
+    sprite.render(
+      canvas,
+      position: Vector2(cx - spriteSize / 2, baseY - spriteSize),
+      size: Vector2(spriteSize, spriteSize),
+    );
+
+    // Still show invulnerability shield
+    if (isInvulnerable) {
+      final shieldAlpha =
+          (0.15 + 0.1 * sin(_flashTimer * 2)).clamp(0.0, 0.3);
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(cx, baseY - spriteSize / 2),
+          width: spriteSize * 1.3,
+          height: spriteSize * 1.2,
+        ),
+        Paint()
+          ..color = GameTheme.hudAccent.withValues(alpha: shieldAlpha)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2 * s,
+      );
+    }
+
+    return true;
   }
 
   void _renderTrail(Canvas canvas, double s) {

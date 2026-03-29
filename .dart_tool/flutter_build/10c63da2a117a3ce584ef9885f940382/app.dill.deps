@@ -49,6 +49,7 @@ file:///C:/Users/bette/AppData/Local/Pub/Cache/hosted/pub.dev/flame-1.36.0/lib/p
 file:///C:/Users/bette/AppData/Local/Pub/Cache/hosted/pub.dev/flame-1.36.0/lib/particles.dart
 file:///C:/Users/bette/AppData/Local/Pub/Cache/hosted/pub.dev/flame-1.36.0/lib/post_process.dart
 file:///C:/Users/bette/AppData/Local/Pub/Cache/hosted/pub.dev/flame-1.36.0/lib/rendering.dart
+file:///C:/Users/bette/AppData/Local/Pub/Cache/hosted/pub.dev/flame-1.36.0/lib/sprite.dart
 file:///C:/Users/bette/AppData/Local/Pub/Cache/hosted/pub.dev/flame-1.36.0/lib/src/anchor.dart
 file:///C:/Users/bette/AppData/Local/Pub/Cache/hosted/pub.dev/flame-1.36.0/lib/src/cache/assets_cache.dart
 file:///C:/Users/bette/AppData/Local/Pub/Cache/hosted/pub.dev/flame-1.36.0/lib/src/cache/images.dart
@@ -489,6 +490,7 @@ file:///C:/Users/bette/Documents/GitHub/guesgger/lib/game/input/swipe_detector.d
 file:///C:/Users/bette/Documents/GitHub/guesgger/lib/game/obstacles/obstacle_data.dart
 file:///C:/Users/bette/Documents/GitHub/guesgger/lib/game/obstacles/obstacle_spawner.dart
 file:///C:/Users/bette/Documents/GitHub/guesgger/lib/game/perspective.dart
+file:///C:/Users/bette/Documents/GitHub/guesgger/lib/game/sprites/sprite_manager.dart
 file:///C:/Users/bette/Documents/GitHub/guesgger/lib/game/world_state.dart
 file:///C:/Users/bette/Documents/GitHub/guesgger/lib/game/zones/zone.dart
 file:///C:/Users/bette/Documents/GitHub/guesgger/lib/game/zones/zone_manager.dart

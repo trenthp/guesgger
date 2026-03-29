@@ -14,6 +14,7 @@ import 'effects/hit_effect.dart';
 import 'effects/speed_lines.dart';
 import 'obstacles/obstacle_spawner.dart';
 import 'perspective.dart';
+import 'sprites/sprite_manager.dart';
 import 'world_state.dart';
 import 'zones/zone_manager.dart';
 
@@ -34,6 +35,7 @@ class FroggerGame extends FlameGame with KeyboardEvents {
   late NpcManager npcManager;
   late ParkEntrance parkEntrance;
   late AmbientEffects ambientEffects;
+  late SpriteManager spriteManager;
 
   final List<ObstacleComponent> _obstacles = [];
 
@@ -52,10 +54,14 @@ class FroggerGame extends FlameGame with KeyboardEvents {
       screenHeight: size.y,
     );
 
+    // Initialize sprite manager (loads available assets, skips missing ones)
+    spriteManager = SpriteManager();
+    await spriteManager.initialize();
+
     worldState = WorldState();
     zoneManager = ZoneManager();
 
-    player = Player(perspective: perspective);
+    player = Player(perspective: perspective, spriteManager: spriteManager);
     ground = Ground(
       perspective: perspective,
       zoneManager: zoneManager,
@@ -72,6 +78,7 @@ class FroggerGame extends FlameGame with KeyboardEvents {
       zoneManager: zoneManager,
       perspective: perspective,
       onSpawn: _addObstacle,
+      spriteManager: spriteManager,
     );
     obstacleSpawner.reset();
 
@@ -92,6 +99,7 @@ class FroggerGame extends FlameGame with KeyboardEvents {
       getSpeedMultiplier: () => worldState.zoneSpeedMultiplier,
       getCurrentZone: () => zoneManager.currentZone,
       getZoneAtDistance: (d) => zoneManager.getZoneAtDistance(d),
+      spriteManager: spriteManager,
     );
 
     // Add components in render order (back to front)
@@ -131,6 +139,7 @@ class FroggerGame extends FlameGame with KeyboardEvents {
     // Update world state (distance, score, invulnerability)
     worldState.update(clampedDt);
     player.isInvulnerable = worldState.isInvulnerable;
+    player.isStunned = worldState.isStunned;
 
     // Check for game end states
     if (worldState.status == GameStatus.won) {
@@ -139,6 +148,14 @@ class FroggerGame extends FlameGame with KeyboardEvents {
     }
     if (worldState.status == GameStatus.gameOver) {
       onGameOver?.call();
+      return;
+    }
+
+    // While stunned, freeze world scroll and obstacles but let NPCs keep walking
+    if (worldState.isStunned) {
+      // NPCs still update (they walk around the fallen player)
+      onStateChanged?.call();
+      super.update(clampedDt);
       return;
     }
 
@@ -248,16 +265,19 @@ class FroggerGame extends FlameGame with KeyboardEvents {
   // Input handling
   void moveLeft() {
     if (!_initialized || worldState.status != GameStatus.playing) return;
+    if (worldState.isStunned) return;
     player.moveLane(-1);
   }
 
   void moveRight() {
     if (!_initialized || worldState.status != GameStatus.playing) return;
+    if (worldState.isStunned) return;
     player.moveLane(1);
   }
 
   void jump() {
     if (!_initialized || worldState.status != GameStatus.playing) return;
+    if (worldState.isStunned) return;
     player.jump();
   }
 
