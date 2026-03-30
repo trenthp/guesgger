@@ -62,12 +62,6 @@
       "languageVersion": "3.0"
     },
     {
-      "name": "flame",
-      "rootUri": "file:///C:/Users/bette/AppData/Local/Pub/Cache/hosted/pub.dev/flame-1.36.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.11"
-    },
-    {
       "name": "flutter",
       "rootUri": "file:///C:/Users/bette/flutter/packages/flutter",
       "packageUri": "lib/",
@@ -174,12 +168,6 @@
       "rootUri": "file:///C:/Users/bette/AppData/Local/Pub/Cache/hosted/pub.dev/objective_c-9.3.0",
       "packageUri": "lib/",
       "languageVersion": "3.10"
-    },
-    {
-      "name": "ordered_set",
-      "rootUri": "file:///C:/Users/bette/AppData/Local/Pub/Cache/hosted/pub.dev/ordered_set-8.0.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.6"
     },
     {
       "name": "path",

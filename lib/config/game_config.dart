@@ -40,4 +40,11 @@ class GameConfig {
   // Spawn intervals (seconds) - min and max per zone
   static const double spawnIntervalMax = 1.8;
   static const double spawnIntervalMin = 0.6;
+
+  // 3D model asset base paths
+  static const String modelBasePath = 'assets/models';
+  static const String playerModelPath = '$modelBasePath/player/player.glb';
+  static const String obstacleModelPath = '$modelBasePath/obstacles';
+  static const String npcModelPath = '$modelBasePath/npcs';
+  static const String environmentModelPath = '$modelBasePath/environment';
 }

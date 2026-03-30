@@ -7,9 +7,9 @@
       "name": "guesgger",
       "version": "1.0.0+1",
       "dependencies": [
-        "flame",
         "flutter",
-        "google_fonts"
+        "google_fonts",
+        "web"
       ],
       "devDependencies": [
         "flutter_lints",
@@ -42,6 +42,11 @@
       ]
     },
     {
+      "name": "web",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
       "name": "google_fonts",
       "version": "6.3.3",
       "dependencies": [
@@ -49,17 +54,6 @@
         "flutter",
         "http",
         "path_provider"
-      ]
-    },
-    {
-      "name": "flame",
-      "version": "1.36.0",
-      "dependencies": [
-        "collection",
-        "flutter",
-        "meta",
-        "ordered_set",
-        "vector_math"
       ]
     },
     {
@@ -193,11 +187,6 @@
       ]
     },
     {
-      "name": "ordered_set",
-      "version": "8.0.0",
-      "dependencies": []
-    },
-    {
       "name": "sky_engine",
       "version": "0.0.0",
       "dependencies": []
@@ -318,11 +307,6 @@
         "flutter",
         "path_provider_platform_interface"
       ]
-    },
-    {
-      "name": "web",
-      "version": "1.1.1",
-      "dependencies": []
     },
     {
       "name": "http_parser",

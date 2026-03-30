@@ -61,8 +61,8 @@ class ObstacleData {
     label: 'CART',
     width: 1.2,
     height: 1.4,
-    color: Color(0xFF9E9E9E),
-    accentColor: Color(0xFF616161),
+    color: Color(0xFFBDBDBD),
+    accentColor: Color(0xFF757575),
     spriteAssetName: 'shopping_cart',
   );
 
@@ -94,7 +94,7 @@ class ObstacleData {
     label: 'SCAN',
     width: 2.4,
     height: 2.5,
-    color: Color(0xFF37474F),
+    color: Color(0xFF607D8B),
     accentColor: Color(0xFF4CAF50),
     spriteAssetName: 'metal_detector',
   );
@@ -104,7 +104,7 @@ class ObstacleData {
     label: 'CHECK',
     width: 2.5,
     height: 1.6,
-    color: Color(0xFF455A64),
+    color: Color(0xFF78909C),
     accentColor: Color(0xFF90A4AE),
     spriteAssetName: 'bag_check_station',
   );
@@ -114,7 +114,7 @@ class ObstacleData {
     label: 'GATE',
     width: 2.8,
     height: 3.0,
-    color: Color(0xFF37474F),
+    color: Color(0xFF607D8B),
     accentColor: Color(0xFF4CAF50),
     spansAllLanes: true,
     blocksJump: true,
@@ -147,8 +147,8 @@ class ObstacleData {
     label: 'SEAT',
     width: 2.5,
     height: 0.5,
-    color: Color(0xFF5D4037),
-    accentColor: Color(0xFF8D6E63),
+    color: Color(0xFF8D6E63),
+    accentColor: Color(0xFFA1887F),
     requiresJump: true,
     spansAllLanes: true,
     spriteAssetName: 'bench',
@@ -172,8 +172,8 @@ class ObstacleData {
     label: 'GATE',
     width: 1.5,
     height: 1.8,
-    color: Color(0xFF78909C),
-    accentColor: Color(0xFFB0BEC5),
+    color: Color(0xFFB0BEC5),
+    accentColor: Color(0xFFCFD8DC),
     spriteAssetName: 'turnstile',
   );
 
@@ -182,8 +182,8 @@ class ObstacleData {
     label: 'TICKETS',
     width: 2.0,
     height: 2.4,
-    color: Color(0xFF1565C0),
-    accentColor: Color(0xFF42A5F5),
+    color: Color(0xFF42A5F5),
+    accentColor: Color(0xFF90CAF9),
     spriteAssetName: 'ticket_kiosk',
   );
 }

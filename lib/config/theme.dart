@@ -18,8 +18,9 @@ class GameTheme {
   static const Color shopsRoad = Color(0xFF2E2218);
   static const Color ticketBoothsGround = Color(0xFF1E3D2E);
   static const Color ticketBoothsRoad = Color(0xFF162E22);
+  // Walkway — metallic moving walkway / travelator
   static const Color walkwayGround = Color(0xFF3A3A4A);
-  static const Color walkwayRoad = Color(0xFF4A4A5E);
+  static const Color walkwayRoad = Color(0xFF6B7B8D);
   static const Color parkEntranceGround = Color(0xFF1B5E20);
   static const Color parkEntranceRoad = Color(0xFF2E7D32);
 
@@ -54,6 +55,22 @@ class GameTheme {
   static const Color ticketAccent = Color(0xFF9C27B0);
   static const Color walkwayAccent = Color(0xFF78909C);
   static const Color entranceAccent = Color(0xFF4CAF50);
+
+  // Zone ambient light colors (bright, not ground-matched)
+  static const Color parkingLotAmbient = Color(0xFFAAA8CC);
+  static const Color securityAmbient = Color(0xFF9EAACC);
+  static const Color shopsAmbient = Color(0xFFCCB898);
+  static const Color ticketBoothsAmbient = Color(0xFF98CCAA);
+  static const Color walkwayAmbient = Color(0xFFAAAABB);
+  static const Color parkEntranceAmbient = Color(0xFF88BB88);
+
+  // Zone fog colors (atmospheric, lighter than ground)
+  static const Color parkingLotFog = Color(0xFF1A1A2E);
+  static const Color securityFog = Color(0xFF1A1D30);
+  static const Color shopsFog = Color(0xFF2A1E14);
+  static const Color ticketBoothsFog = Color(0xFF142A1E);
+  static const Color walkwayFog = Color(0xFF222233);
+  static const Color parkEntranceFog = Color(0xFF0E3318);
 
   // UI gradients
   static const Color menuGradientTop = Color(0xFF0A0E27);

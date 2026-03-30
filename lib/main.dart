@@ -18,7 +18,7 @@ class ThemeParkRunnerApp extends StatelessWidget {
       title: 'Theme Park Runner',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: Colors.black,
+        scaffoldBackgroundColor: Colors.transparent,
       ),
       home: const AppNavigator(),
     );

@@ -6,7 +6,11 @@
       "WebFetch(domain:kenney.nl)",
       "Read(//c/tmp/asset_processor/**)",
       "Bash(dart run:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(flutter pub:*)",
+      "Bash(flutter build:*)",
+      "Bash(cat:*)",
+      "Read(//tmp/**)"
     ]
   }
 }
