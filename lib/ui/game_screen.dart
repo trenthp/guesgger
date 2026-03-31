@@ -107,6 +107,7 @@ class _GameScreenState extends State<GameScreen>
         focusNode: FocusNode()..requestFocus(),
         onKeyEvent: (event) => _game.onKeyEvent(event),
         child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onPanStart: _swipeDetector.onPanStart,
           onPanUpdate: _swipeDetector.onPanUpdate,
           onPanEnd: _swipeDetector.onPanEnd,

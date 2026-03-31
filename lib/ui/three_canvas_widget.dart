@@ -18,6 +18,7 @@ class ThreeCanvasWidget extends StatefulWidget {
 
 class _ThreeCanvasWidgetState extends State<ThreeCanvasWidget> {
   bool _bridgeReady = false;
+  Size _lastSize = Size.zero;
 
   @override
   void initState() {
@@ -45,8 +46,20 @@ class _ThreeCanvasWidgetState extends State<ThreeCanvasWidget> {
     ThreeBridge.instance.renderFrame();
 
     _bridgeReady = true;
+    _lastSize = size;
     setState(() {});
     widget.onReady?.call();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_bridgeReady) return;
+    final size = MediaQuery.of(context).size;
+    if (size != _lastSize && size.width > 0 && size.height > 0) {
+      _lastSize = size;
+      ThreeBridge.instance.resize(size.width.toInt(), size.height.toInt());
+    }
   }
 
   @override
