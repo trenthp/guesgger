@@ -107,16 +107,41 @@ class SceneryManager {
   // --- Landmark definitions: placed once at specific distances ---
   // [distance, modelId, side (1=right, -1=left), scale, xOffset]
   static const List<List<dynamic>> _landmarks = [
+    // --- Walkway entrance/exit markers (support posts flanking road) ---
+    // Walkway 1: parkingLotEnd (500) → walkway1End (700)
+    [GameConfig.parkingLotEnd, 'support', -1, 3.5, 6.0],
+    [GameConfig.parkingLotEnd, 'support', 1, 3.5, 6.0],
+    [GameConfig.walkway1End, 'support', -1, 3.5, 6.0],
+    [GameConfig.walkway1End, 'support', 1, 3.5, 6.0],
+
     // Security checkpoint gate buildings flanking the road
     [680.0, 'structure-gate-building', -1, 5.0, 8.0],
     [680.0, 'structure-gate-building', 1, 5.0, 8.0],
 
+    // Walkway 2: securityEnd (1200) → walkway2End (1400)
+    [GameConfig.securityEnd, 'support', -1, 3.5, 6.0],
+    [GameConfig.securityEnd, 'support', 1, 3.5, 6.0],
+    [GameConfig.walkway2End, 'support', -1, 3.5, 6.0],
+    [GameConfig.walkway2End, 'support', 1, 3.5, 6.0],
+
     // Large globe on the left between shops and ticket booths
     [2050.0, 'ball-red', -1, 30.0, 10.0],
+
+    // Walkway 3: shopsEnd (2000) → walkway3End (2200)
+    [GameConfig.shopsEnd, 'support', -1, 3.5, 6.0],
+    [GameConfig.shopsEnd, 'support', 1, 3.5, 6.0],
+    [GameConfig.walkway3End, 'support', -1, 3.5, 6.0],
+    [GameConfig.walkway3End, 'support', 1, 3.5, 6.0],
 
     // Ticket booth buildings flanking the entrance to ticket area
     [2180.0, 'structure-gate-building', -1, 6.0, 7.0],
     [2180.0, 'structure-gate-building', 1, 6.0, 7.0],
+
+    // Walkway 4: ticketBoothsEnd (2800) → walkway4End (3000)
+    [GameConfig.ticketBoothsEnd, 'support', -1, 3.5, 6.0],
+    [GameConfig.ticketBoothsEnd, 'support', 1, 3.5, 6.0],
+    [GameConfig.walkway4End, 'support', -1, 3.5, 6.0],
+    [GameConfig.walkway4End, 'support', 1, 3.5, 6.0],
 
     // Grand theme park entrance — castle on both sides, visible from far away
     [2750.0, 'castle', -1, 14.0, 12.0],

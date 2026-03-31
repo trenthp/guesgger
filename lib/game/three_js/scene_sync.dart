@@ -275,6 +275,20 @@ class SceneSync {
       ];
     }
 
+    // --- Walkway Z-range clipping (every frame) ---
+    final walkwayRanges = <Map<String, double>>[];
+    for (final z in zoneManager.zones) {
+      if (!z.isWalkway) continue;
+      // Convert zone world distances to camera-relative Z
+      final startZ = z.startDistance - worldState.distanceTraveled + GameConfig.playerWorldZ;
+      final endZ = z.endDistance - worldState.distanceTraveled + GameConfig.playerWorldZ;
+      // Only include if any part is in the visible range
+      if (endZ > -5 && startZ < 240) {
+        walkwayRanges.add({'startZ': startZ, 'endZ': endZ});
+      }
+    }
+    update['walkwayRanges'] = walkwayRanges;
+
     // --- Zone visuals ---
     final zone = zoneManager.currentZone;
     if (_lastZoneType != zone.type) {

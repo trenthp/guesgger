@@ -32,6 +32,14 @@ class ThreeBridgeClass {
     this.walkwayGrooves = []; // cross-groove lines that scroll
     this.walkwayChevrons = []; // directional arrows
 
+    // Walkway clipping planes (Z-range visibility)
+    this.walkwayClipStart = null;
+    this.walkwayClipEnd = null;
+    this.walkwayEntryRamp = null;
+    this.walkwayExitRamp = null;
+    this.walkwayRoadOverlay = null;
+    this.walkwayGroundOverlay = null;
+
     // Effects
     this.hitOverlayTimer = 0;
 
@@ -67,6 +75,7 @@ class ThreeBridgeClass {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.2;
+    this.renderer.localClippingEnabled = true;
 
     // Scene
     this.scene = new THREE.Scene();
@@ -191,6 +200,10 @@ class ThreeBridgeClass {
       for (const obj of data.update) {
         this._updateObject(obj, delta);
       }
+    }
+
+    if (data.walkwayRanges !== undefined) {
+      this._updateWalkwayClipping(data.walkwayRanges);
     }
 
     if (data.zone) {
@@ -484,39 +497,48 @@ class ThreeBridgeClass {
     const roadWidth = laneWidth * 3; // 9 units
     const roadHalf = roadWidth / 2; // 4.5
 
+    // --- Clipping planes: restrict walkway geometry to a Z range ---
+    // Plane(normal, constant): passes if dot(normal, point) + constant >= 0
+    // Start clip: Z >= startZ  →  normal=(0,0,1), constant=-startZ
+    // End clip:   Z <= endZ    →  normal=(0,0,-1), constant=endZ
+    this.walkwayClipStart = new THREE.Plane(new THREE.Vector3(0, 0, 1), 1000);
+    this.walkwayClipEnd = new THREE.Plane(new THREE.Vector3(0, 0, -1), -1000);
+    const clipPlanes = [this.walkwayClipStart, this.walkwayClipEnd];
+
     this.walkwayGroup = new THREE.Group();
-    this.walkwayGroup.visible = false;
+    // Always in the scene — clipping planes control visibility
+    this.walkwayGroup.visible = true;
 
     // --- Side rails (metallic handrails along edges) ---
     const railMat = new THREE.MeshStandardMaterial({
       color: 0xaabbcc,
       roughness: 0.2,
       metalness: 0.8,
+      clippingPlanes: clipPlanes,
     });
     for (const side of [-1, 1]) {
-      // Outer rail (tall)
       const outerGeo = new THREE.BoxGeometry(0.15, 1.2, 400);
       const outerRail = new THREE.Mesh(outerGeo, railMat);
       outerRail.position.set(side * (roadHalf + 0.1), 0.6, 100);
       outerRail.castShadow = true;
       this.walkwayGroup.add(outerRail);
 
-      // Handrail bar on top
       const barGeo = new THREE.BoxGeometry(0.4, 0.08, 400);
       const barMat = new THREE.MeshStandardMaterial({
         color: 0x445566,
         roughness: 0.1,
         metalness: 0.9,
+        clippingPlanes: clipPlanes,
       });
       const bar = new THREE.Mesh(barGeo, barMat);
       bar.position.set(side * (roadHalf + 0.1), 1.2, 100);
       this.walkwayGroup.add(bar);
 
-      // Vertical support posts every 8 units
       const postMat = new THREE.MeshStandardMaterial({
         color: 0x889aaa,
         roughness: 0.3,
         metalness: 0.7,
+        clippingPlanes: clipPlanes,
       });
       for (let z = 0; z < 400; z += 8) {
         const postGeo = new THREE.BoxGeometry(0.1, 1.2, 0.1);
@@ -528,7 +550,10 @@ class ThreeBridgeClass {
     }
 
     // --- Metal surface grooves (cross lines across the road) ---
-    const grooveMat = new THREE.MeshBasicMaterial({ color: 0x556677 });
+    const grooveMat = new THREE.MeshBasicMaterial({
+      color: 0x556677,
+      clippingPlanes: clipPlanes,
+    });
     for (let z = 0; z < 400; z += 1.5) {
       const grooveGeo = new THREE.PlaneGeometry(roadWidth - 0.3, 0.08);
       const groove = new THREE.Mesh(grooveGeo, grooveMat);
@@ -543,19 +568,17 @@ class ThreeBridgeClass {
       color: 0x88ccff,
       transparent: true,
       opacity: 0.5,
+      clippingPlanes: clipPlanes,
     });
-    // Create chevron shape (V pointing forward / +Z)
     for (let z = 0; z < 400; z += 12) {
-      // Left arm of chevron
       const armGeo = new THREE.PlaneGeometry(0.15, 2.0);
       const leftArm = new THREE.Mesh(armGeo, chevronMat);
       leftArm.rotation.x = -Math.PI / 2;
-      leftArm.rotation.z = 0.4; // angle
+      leftArm.rotation.z = 0.4;
       leftArm.position.set(-0.7, 0.025, z);
       this.walkwayGroup.add(leftArm);
       this.walkwayChevrons.push(leftArm);
 
-      // Right arm of chevron
       const rightArm = new THREE.Mesh(armGeo.clone(), chevronMat);
       rightArm.rotation.x = -Math.PI / 2;
       rightArm.rotation.z = -0.4;
@@ -564,11 +587,12 @@ class ThreeBridgeClass {
       this.walkwayChevrons.push(rightArm);
     }
 
-    // --- Raised edge strips (the rubber bumper strips on real moving walkways) ---
+    // --- Raised edge strips ---
     const stripMat = new THREE.MeshStandardMaterial({
       color: 0x333333,
       roughness: 0.9,
       metalness: 0.0,
+      clippingPlanes: clipPlanes,
     });
     for (const side of [-1, 1]) {
       const stripGeo = new THREE.BoxGeometry(0.3, 0.06, 400);
@@ -577,7 +601,59 @@ class ThreeBridgeClass {
       this.walkwayGroup.add(strip);
     }
 
+    // --- Road and ground overlays (clipped to walkway Z range) ---
+    // These sit just above the base road/ground so the walkway section
+    // shows a different color without changing the global surface.
+    const roadOverlayGeo = new THREE.PlaneGeometry(roadWidth, 400);
+    const roadOverlayMat = new THREE.MeshStandardMaterial({
+      color: 0x6B7B8D, // walkway road color
+      roughness: 0.3,
+      metalness: 0.4,
+      clippingPlanes: clipPlanes,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    });
+    this.walkwayRoadOverlay = new THREE.Mesh(roadOverlayGeo, roadOverlayMat);
+    this.walkwayRoadOverlay.rotation.x = -Math.PI / 2;
+    this.walkwayRoadOverlay.position.set(0, -0.01, 100);
+    this.walkwayRoadOverlay.receiveShadow = true;
+    this.walkwayGroup.add(this.walkwayRoadOverlay);
+
+    const groundOverlayGeo = new THREE.PlaneGeometry(60, 400);
+    const groundOverlayMat = new THREE.MeshStandardMaterial({
+      color: 0x3A3A4A, // walkway ground color
+      roughness: 0.9,
+      metalness: 0.0,
+      clippingPlanes: clipPlanes,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    });
+    this.walkwayGroundOverlay = new THREE.Mesh(groundOverlayGeo, groundOverlayMat);
+    this.walkwayGroundOverlay.rotation.x = -Math.PI / 2;
+    this.walkwayGroundOverlay.position.set(0, -0.02, 100);
+    this.walkwayGroundOverlay.receiveShadow = true;
+    this.walkwayGroup.add(this.walkwayGroundOverlay);
+
     this.scene.add(this.walkwayGroup);
+
+    // --- Entry/exit ramp plates (positioned dynamically, not clipped) ---
+    const rampGeo = new THREE.BoxGeometry(roadWidth + 1.0, 0.12, 1.5);
+    const rampMat = new THREE.MeshStandardMaterial({
+      color: 0x667788,
+      metalness: 0.6,
+      roughness: 0.3,
+    });
+    this.walkwayEntryRamp = new THREE.Mesh(rampGeo, rampMat);
+    this.walkwayEntryRamp.receiveShadow = true;
+    this.walkwayEntryRamp.visible = false;
+    this.scene.add(this.walkwayEntryRamp);
+
+    this.walkwayExitRamp = new THREE.Mesh(rampGeo.clone(), rampMat.clone());
+    this.walkwayExitRamp.receiveShadow = true;
+    this.walkwayExitRamp.visible = false;
+    this.scene.add(this.walkwayExitRamp);
   }
 
   _buildSky() {
@@ -625,29 +701,64 @@ class ThreeBridgeClass {
   }
 
   _updateZoneVisuals(zone) {
-    if (this.ground && zone.groundColor) {
-      this.ground.material.color.set(zone.groundColor);
-    }
-    if (this.road && zone.roadColor) {
-      this.road.material.color.set(zone.roadColor);
-      // Make road metallic during walkways
-      if (zone.isWalkway) {
-        this.road.material.metalness = 0.4;
-        this.road.material.roughness = 0.3;
-      } else {
+    // Only change base road/ground colors for non-walkway zones.
+    // Walkway sections use clipped overlay planes for their colors.
+    if (!zone.isWalkway) {
+      if (this.ground && zone.groundColor) {
+        this.ground.material.color.set(zone.groundColor);
+      }
+      if (this.road && zone.roadColor) {
+        this.road.material.color.set(zone.roadColor);
         this.road.material.metalness = 0.1;
         this.road.material.roughness = 0.8;
       }
     }
+    // Fog and ambient lighting are global atmosphere — always update
     if (this.scene.fog && zone.fogColor) {
       this.scene.fog.color.set(zone.fogColor);
     }
     if (this.ambientLight && zone.ambientColor) {
       this.ambientLight.color.set(zone.ambientColor);
     }
-    // Show/hide walkway escalator geometry
-    if (this.walkwayGroup) {
-      this.walkwayGroup.visible = !!zone.isWalkway;
+  }
+
+  _updateWalkwayClipping(ranges) {
+    if (!this.walkwayClipStart || !this.walkwayClipEnd) return;
+
+    if (!ranges || ranges.length === 0) {
+      // No walkway visible — clip everything out
+      this.walkwayClipStart.constant = 1000;
+      this.walkwayClipEnd.constant = -1000;
+      if (this.walkwayEntryRamp) this.walkwayEntryRamp.visible = false;
+      if (this.walkwayExitRamp) this.walkwayExitRamp.visible = false;
+      return;
+    }
+
+    // Use the first visible walkway range
+    const r = ranges[0];
+    // Clamp to visible range to avoid rendering behind camera
+    const startZ = Math.max(r.startZ, -5);
+    const endZ = Math.min(r.endZ, 240);
+
+    // Start clip: Z >= startZ  →  constant = -startZ
+    this.walkwayClipStart.constant = -startZ;
+    // End clip:   Z <= endZ    →  constant = endZ
+    this.walkwayClipEnd.constant = endZ;
+
+    // Position entry/exit ramp plates at the boundaries
+    if (this.walkwayEntryRamp) {
+      const entryVisible = r.startZ > -5 && r.startZ < 240;
+      this.walkwayEntryRamp.visible = entryVisible;
+      if (entryVisible) {
+        this.walkwayEntryRamp.position.set(0, 0.06, r.startZ);
+      }
+    }
+    if (this.walkwayExitRamp) {
+      const exitVisible = r.endZ > -5 && r.endZ < 240;
+      this.walkwayExitRamp.visible = exitVisible;
+      if (exitVisible) {
+        this.walkwayExitRamp.position.set(0, 0.06, r.endZ);
+      }
     }
   }
 
