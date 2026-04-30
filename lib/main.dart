@@ -6,16 +6,16 @@ import 'ui/main_menu_screen.dart';
 import 'ui/win_screen.dart';
 
 void main() {
-  runApp(const ThemeParkRunnerApp());
+  runApp(const GuesggerApp());
 }
 
-class ThemeParkRunnerApp extends StatelessWidget {
-  const ThemeParkRunnerApp({super.key});
+class GuesggerApp extends StatelessWidget {
+  const GuesggerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Theme Park Runner',
+      title: 'Guesgger',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: Colors.transparent,

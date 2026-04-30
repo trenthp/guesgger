@@ -141,27 +141,6 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                             ),
                           ),
                           const SizedBox(height: 16),
-                          const Text(
-                            'THEME PARK',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 48,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 8,
-                              shadows: [
-                                Shadow(
-                                  offset: Offset(0, 0),
-                                  blurRadius: 20,
-                                  color: GameTheme.hudAccent,
-                                ),
-                                Shadow(
-                                  offset: Offset(2, 2),
-                                  blurRadius: 8,
-                                  color: Colors.black54,
-                                ),
-                              ],
-                            ),
-                          ),
                           ShaderMask(
                             shaderCallback: (bounds) => const LinearGradient(
                               colors: [
@@ -171,7 +150,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                               ],
                             ).createShader(bounds),
                             child: const Text(
-                              'RUNNER',
+                              'GUESGGER',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 64,

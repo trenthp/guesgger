@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:image/image.dart' as img;
 
-/// Kenney asset processor for Theme Park Runner (guesgger)
+/// Kenney asset processor for Guesgger
 /// Reads downloaded Kenney packs, processes them, and outputs
 /// game-ready assets in the correct format and directory structure.
 
@@ -9,7 +9,7 @@ const kenneyDir = 'C:/Users/bette/AppData/Local/Temp/kenney_assets';
 const outputDir = 'C:/Users/bette/Documents/GitHub/guesgger/assets/images';
 
 void main() async {
-  print('=== Kenney Asset Processor for Theme Park Runner ===\n');
+  print('=== Kenney Asset Processor for Guesgger ===\n');
 
   // Create output directories
   for (final dir in [

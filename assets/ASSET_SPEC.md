@@ -1,4 +1,4 @@
-# Theme Park Runner - Asset Specification
+# Guesgger - Asset Specification
 
 Drop PNG files into the folders below. The game automatically loads any assets
 it finds and falls back to procedural rendering for anything missing.

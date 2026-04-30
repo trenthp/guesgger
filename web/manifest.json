@@ -1,6 +1,6 @@
 {
-  "name": "Theme Park Runner",
-  "short_name": "TPRunner",
+  "name": "Guesgger",
+  "short_name": "Guesgger",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#0175C2",

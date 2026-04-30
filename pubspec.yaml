@@ -1,5 +1,5 @@
 name: guesgger
-description: A Frogger-style 3D runner game - navigate from the parking lot to the theme park entrance!
+description: Guesgger - a Frogger-style 3D runner game; navigate from the parking lot to the theme park entrance!
 publish_to: 'none'
 version: 1.0.0+1
 
