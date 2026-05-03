@@ -1,28 +1,34 @@
 import 'dart:ui';
 
 class GameTheme {
-  // Sky
-  static const Color skyTop = Color(0xFF1A1A2E);
-  static const Color skyMid = Color(0xFF16213E);
-  static const Color skyBottom = Color(0xFF0F3460);
+  // Sky — late-afternoon golden hour
+  static const Color skyTop = Color(0xFF3B3568);
+  static const Color skyMid = Color(0xFF7A4A6E);
+  static const Color skyBottom = Color(0xFFD17A45);
 
-  // Sunset horizon glow
-  static const Color horizonGlow = Color(0xFFE94560);
+  // Hot pink/orange sunset horizon
+  static const Color horizonGlow = Color(0xFFFFB066);
 
-  // Zone ground colors (richer, more saturated)
-  static const Color parkingLotGround = Color(0xFF2D2D3D);
-  static const Color parkingLotRoad = Color(0xFF1E1E2A);
-  static const Color securityGround = Color(0xFF2A2D3E);
-  static const Color securityRoad = Color(0xFF1C1E2E);
-  static const Color shopsGround = Color(0xFF3D2E1E);
-  static const Color shopsRoad = Color(0xFF2E2218);
-  static const Color ticketBoothsGround = Color(0xFF1E3D2E);
-  static const Color ticketBoothsRoad = Color(0xFF162E22);
+  // Dusk palette — used when daylight drops near park closing
+  static const Color skyTopDusk = Color(0xFF0E0F26);
+  static const Color skyMidDusk = Color(0xFF26143A);
+  static const Color skyBottomDusk = Color(0xFF4A1830);
+  static const Color horizonGlowDusk = Color(0xFF7A2030);
+
+  // Zone ground colors — warmer, sunlit-asphalt tones
+  static const Color parkingLotGround = Color(0xFF4A3D32);
+  static const Color parkingLotRoad = Color(0xFF2E2620);
+  static const Color securityGround = Color(0xFF3F3C42);
+  static const Color securityRoad = Color(0xFF26252C);
+  static const Color shopsGround = Color(0xFF5C4226);
+  static const Color shopsRoad = Color(0xFF3A2A18);
+  static const Color ticketBoothsGround = Color(0xFF2E4530);
+  static const Color ticketBoothsRoad = Color(0xFF1C2E20);
   // Walkway — metallic moving walkway / travelator
-  static const Color walkwayGround = Color(0xFF3A3A4A);
-  static const Color walkwayRoad = Color(0xFF6B7B8D);
-  static const Color parkEntranceGround = Color(0xFF1B5E20);
-  static const Color parkEntranceRoad = Color(0xFF2E7D32);
+  static const Color walkwayGround = Color(0xFF494A55);
+  static const Color walkwayRoad = Color(0xFF8B95A3);
+  static const Color parkEntranceGround = Color(0xFF2E6B30);
+  static const Color parkEntranceRoad = Color(0xFF3D8A40);
 
   // Lane markers
   static const Color laneMarker = Color(0xAAFFFFFF);
@@ -56,21 +62,21 @@ class GameTheme {
   static const Color walkwayAccent = Color(0xFF78909C);
   static const Color entranceAccent = Color(0xFF4CAF50);
 
-  // Zone ambient light colors (bright, not ground-matched)
-  static const Color parkingLotAmbient = Color(0xFFAAA8CC);
-  static const Color securityAmbient = Color(0xFF9EAACC);
-  static const Color shopsAmbient = Color(0xFFCCB898);
-  static const Color ticketBoothsAmbient = Color(0xFF98CCAA);
-  static const Color walkwayAmbient = Color(0xFFAAAABB);
-  static const Color parkEntranceAmbient = Color(0xFF88BB88);
+  // Zone ambient light colors — warm late-afternoon cast
+  static const Color parkingLotAmbient = Color(0xFFE6C8A0);
+  static const Color securityAmbient = Color(0xFFC8B8A0);
+  static const Color shopsAmbient = Color(0xFFFFCC8C);
+  static const Color ticketBoothsAmbient = Color(0xFFD8C098);
+  static const Color walkwayAmbient = Color(0xFFD0BCA8);
+  static const Color parkEntranceAmbient = Color(0xFFC8D098);
 
-  // Zone fog colors (atmospheric, lighter than ground)
-  static const Color parkingLotFog = Color(0xFF1A1A2E);
-  static const Color securityFog = Color(0xFF1A1D30);
-  static const Color shopsFog = Color(0xFF2A1E14);
-  static const Color ticketBoothsFog = Color(0xFF142A1E);
-  static const Color walkwayFog = Color(0xFF222233);
-  static const Color parkEntranceFog = Color(0xFF0E3318);
+  // Zone fog colors — golden-hour dust, deepens to dusk
+  static const Color parkingLotFog = Color(0xFFA47452);
+  static const Color securityFog = Color(0xFF806B62);
+  static const Color shopsFog = Color(0xFFC8855A);
+  static const Color ticketBoothsFog = Color(0xFF8A8A5E);
+  static const Color walkwayFog = Color(0xFF8E7C82);
+  static const Color parkEntranceFog = Color(0xFF6B8862);
 
   // UI gradients
   static const Color menuGradientTop = Color(0xFF0A0E27);

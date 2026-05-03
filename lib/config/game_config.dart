@@ -1,21 +1,20 @@
 /// All tunable game constants in one place.
 class GameConfig {
   // Player
-  static const int startingLives = 3;
   static const double playerWorldZ = 10.0;
   static const double laneWidth = 3.0;
   static const double jumpDuration = 0.55;
   static const double jumpHeight = 2.5;
   static const double laneSwitchDuration = 0.15;
   static const double invulnerabilityDuration = 2.0;
-  static const double stunDuration = 0.8; // pause after hit before getting back up
+  static const double stunDuration = 0.8;
 
   // Camera / Perspective
-  static const double focalLengthFactor = 0.55; // multiplied by screen height
+  static const double focalLengthFactor = 0.55;
   static const double cameraHeight = 12.0;
   static const double nearPlane = 2.0;
   static const double farPlane = 200.0;
-  static const double horizonRatio = 0.18; // horizon at 18% from top
+  static const double horizonRatio = 0.18;
 
   // Obstacles
   static const double spawnDistance = 180.0;
@@ -33,9 +32,17 @@ class GameConfig {
   static const double walkway4End = 3000;
   static const double parkEntranceDistance = 3000;
 
-  // Speed
-  static const double baseSpeed = 30.0; // world units per second
-  static const double walkwaySpeedMultiplier = 1.5;
+  // Speed — slowed overall for a less frantic, race-against-closing-time feel.
+  static const double baseSpeed = 18.0;
+
+  // Walkway lane speed multipliers (split walkway: right with you, left against).
+  static const double walkwayLaneMultiplierRight = 1.6;
+  static const double walkwayLaneMultiplierMiddle = 1.0;
+  static const double walkwayLaneMultiplierLeft = 0.5;
+
+  // Park-closing timer (seconds). Game ends in failure if this hits 0
+  // before the player reaches the park entrance.
+  static const double parkCloseTime = 180.0;
 
   // Spawn intervals (seconds) - min and max per zone
   static const double spawnIntervalMax = 1.8;

@@ -14,6 +14,7 @@ import 'three_js/model_manager.dart';
 import 'three_js/scene_sync.dart';
 import 'three_js/three_bridge.dart';
 import 'world_state.dart';
+import 'zones/zone.dart';
 import 'zones/zone_manager.dart';
 
 /// Main game controller — replaces the Flame [FroggerGame].
@@ -58,14 +59,14 @@ class ThreeJsGame {
     npcManager = NpcManager(
       getDistanceTraveled: () => worldState.distanceTraveled,
       getCurrentSpeed: () => worldState.currentSpeed,
-      getSpeedMultiplier: () => worldState.zoneSpeedMultiplier,
+      getSpeedMultiplier: () => worldState.effectiveSpeedMultiplier,
       getCurrentZone: () => zoneManager.currentZone,
       getZoneAtDistance: (d) => zoneManager.getZoneAtDistance(d),
     );
     sceneryManager = SceneryManager(
       getDistanceTraveled: () => worldState.distanceTraveled,
       getCurrentSpeed: () => worldState.currentSpeed,
-      getSpeedMultiplier: () => worldState.zoneSpeedMultiplier,
+      getSpeedMultiplier: () => worldState.effectiveSpeedMultiplier,
       getCurrentZone: () => zoneManager.currentZone,
       getZoneAtDistance: (d) => zoneManager.getZoneAtDistance(d),
     );
@@ -116,8 +117,8 @@ class ThreeJsGame {
     // Update zone
     zoneManager.update(worldState.distanceTraveled);
     final zone = zoneManager.currentZone;
-    worldState.zoneSpeedMultiplier = zone.speedMultiplier;
-    worldState.onReverseWalkway = zone.reversesDirection;
+    worldState.onWalkway = zone.isWalkway;
+    worldState.effectiveSpeedMultiplier = _laneAwareSpeedMultiplier(zone);
 
     // Update world state
     worldState.update(dt);
@@ -134,20 +135,23 @@ class ThreeJsGame {
       return;
     }
 
-    // Player update
+    // Player update — runs even while stunned so the death animation plays.
     player.update(dt);
 
-    // While stunned, freeze obstacles but let NPCs walk
-    final removedNpcIds = npcManager.update(dt);
-    final removedSceneryIds = sceneryManager.update(dt);
+    // Everything else only advances when the world is moving with the player.
+    // When stunned, obstacles, NPCs, scenery, and ground/walkway scroll all
+    // freeze together — the world's perspective matches the player's.
+    final removedNpcIds = <String>[];
+    final removedSceneryIds = <String>[];
 
     if (!worldState.isStunned) {
-      // Spawn obstacles
+      removedNpcIds.addAll(npcManager.update(dt));
+      removedSceneryIds.addAll(sceneryManager.update(dt));
+
       _updateSpawner(dt);
 
-      // Move obstacles
       final moveDistance =
-          worldState.currentSpeed * worldState.zoneSpeedMultiplier * dt;
+          worldState.currentSpeed * worldState.effectiveSpeedMultiplier * dt;
       final removedObstacleIds = <String>[];
 
       _obstacles.removeWhere((obs) {
@@ -164,7 +168,6 @@ class ThreeJsGame {
         _sceneSync!.removeObstacles(removedObstacleIds);
       }
 
-      // NPC collisions
       _checkNpcCollisions();
     }
 
@@ -320,9 +323,20 @@ class ThreeJsGame {
     worldState.onHit();
     _sceneSync?.triggerHitFlash();
     onStateChanged?.call();
+  }
 
-    if (worldState.status == GameStatus.gameOver) {
-      onGameOver?.call();
+  /// Combine the zone-wide multiplier with a per-lane modifier on walkways.
+  /// Walkway zones split lanes: right (+1) carries you forward, left (-1)
+  /// pushes back, middle (0) is open ground at base pace.
+  double _laneAwareSpeedMultiplier(Zone zone) {
+    if (!zone.isWalkway) return zone.speedMultiplier;
+    switch (player.currentLane) {
+      case 1:
+        return GameConfig.walkwayLaneMultiplierRight;
+      case -1:
+        return GameConfig.walkwayLaneMultiplierLeft;
+      default:
+        return GameConfig.walkwayLaneMultiplierMiddle;
     }
   }
 

@@ -5,7 +5,6 @@ enum GameStatus { playing, gameOver, won, paused }
 class WorldState {
   double distanceTraveled = 0;
   int score = 0;
-  int lives = GameConfig.startingLives;
   double currentSpeed = GameConfig.baseSpeed;
   bool isInvulnerable = false;
   double invulnerabilityTimer = 0;
@@ -13,18 +12,21 @@ class WorldState {
   double stunTimer = 0;
   GameStatus status = GameStatus.playing;
 
-  /// Speed multiplier from zone.
-  double zoneSpeedMultiplier = 1.0;
+  /// Effective speed multiplier this frame — combines zone speed with
+  /// per-lane walkway modifier. Set by [ThreeJsGame] before [update].
+  double effectiveSpeedMultiplier = 1.0;
 
-  /// Whether player is on a reverse walkway.
-  bool onReverseWalkway = false;
+  /// Seconds remaining before the park closes. When 0, the player loses.
+  double timeRemaining = GameConfig.parkCloseTime;
+
+  /// True if the player is on a walkway zone (any lane). Used by HUD/visuals.
+  bool onWalkway = false;
 
   void update(double dt) {
     if (status != GameStatus.playing) return;
 
     if (!isStunned) {
-      final effectiveSpeed = currentSpeed * zoneSpeedMultiplier;
-      distanceTraveled += effectiveSpeed * dt;
+      distanceTraveled += currentSpeed * effectiveSpeedMultiplier * dt;
       score = distanceTraveled.toInt();
     }
 
@@ -44,7 +46,14 @@ class WorldState {
       }
     }
 
-    // Check win condition
+    // Park-closing countdown — runs even while stunned.
+    timeRemaining -= dt;
+    if (timeRemaining <= 0) {
+      timeRemaining = 0;
+      status = GameStatus.gameOver;
+      return;
+    }
+
     if (distanceTraveled >= GameConfig.parkEntranceDistance) {
       status = GameStatus.won;
     }
@@ -52,27 +61,23 @@ class WorldState {
 
   void onHit() {
     if (isInvulnerable) return;
-    lives--;
     isStunned = true;
     stunTimer = GameConfig.stunDuration;
     isInvulnerable = true;
     invulnerabilityTimer = GameConfig.invulnerabilityDuration;
-    if (lives <= 0) {
-      status = GameStatus.gameOver;
-    }
   }
 
   void reset() {
     distanceTraveled = 0;
     score = 0;
-    lives = GameConfig.startingLives;
     currentSpeed = GameConfig.baseSpeed;
     isInvulnerable = false;
     invulnerabilityTimer = 0;
     isStunned = false;
     stunTimer = 0;
     status = GameStatus.playing;
-    zoneSpeedMultiplier = 1.0;
-    onReverseWalkway = false;
+    effectiveSpeedMultiplier = 1.0;
+    timeRemaining = GameConfig.parkCloseTime;
+    onWalkway = false;
   }
 }

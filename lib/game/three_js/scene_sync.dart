@@ -302,11 +302,41 @@ class SceneSync {
       };
     }
 
+    // --- Daylight (1.0 late afternoon → 0.0 dusk) ---
+    // sqrt curve keeps the world bright through most of the run; the
+    // darkening becomes dramatic only in the last third as time runs out.
+    final timeFraction =
+        (worldState.timeRemaining / GameConfig.parkCloseTime).clamp(0.0, 1.0);
+    final daylight = sqrt(timeFraction);
+    update['daylight'] = daylight;
+
     // --- Ground scroll ---
-    final scrollDist =
-        worldState.currentSpeed * worldState.zoneSpeedMultiplier * dt;
+    // All world motion is gated on the player moving. When stunned the world
+    // freezes — ground, lane lines, and walkway chevrons all stop together.
+    // Lane lines scroll at the same rate as obstacles, NPCs, and scenery so
+    // the road surface stays visually consistent with the world advancing.
+    final scrollDist = worldState.isStunned
+        ? 0.0
+        : worldState.currentSpeed * worldState.effectiveSpeedMultiplier * dt;
     _scrollAccumulator += scrollDist;
-    update['scrollOffset'] = scrollDist * 0.3;
+    update['scrollOffset'] = scrollDist;
+
+    // --- Walkway lane scroll ---
+    // Each strip scrolls at its own constant rate per zone (right at the
+    // boost multiplier, left in the opposite direction at the penalty
+    // multiplier), independent of which lane the player is in. Both freeze
+    // with everything else when the player is stunned.
+    final walkwayBase = worldState.isStunned
+        ? 0.0
+        : worldState.currentSpeed * dt;
+    // Each strip's chevrons move in the direction they point. A negative
+    // offset increments position.z (away from camera, +Z = forward); a
+    // positive offset decrements (toward camera, -Z = backward).
+    update['walkwayLaneScroll'] = {
+      'right': -walkwayBase * GameConfig.walkwayLaneMultiplierLeft * 0.3,
+      'left': walkwayBase * GameConfig.walkwayLaneMultiplierRight * 0.3,
+    };
+    update['laneWidth'] = GameConfig.laneWidth;
 
     _bridge.syncScene(update);
     _bridge.renderFrame();

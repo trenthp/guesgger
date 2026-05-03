@@ -172,57 +172,54 @@ class NpcManager {
   }
 
   void _spawnSingle(double spawnZ, Zone spawnZone) {
-    NpcType type;
-    if (spawnZone.type == ZoneType.security) {
-      final roll = _random.nextDouble();
-      if (roll < 0.40) {
-        type = NpcType.stationary;
-      } else if (roll < 0.70) {
-        type = NpcType.walkingSame;
-      } else {
-        type = NpcType.walkingOpposite;
-      }
-    } else {
-      final roll = _random.nextDouble();
-      if (roll < 0.40) {
-        type = NpcType.walkingSame;
-      } else if (roll < 0.70) {
-        type = NpcType.walkingOpposite;
-      } else {
-        type = NpcType.stationary;
-      }
-    }
-
     final lane = _randomLane();
+    final type = _typeForLane(lane, spawnZone);
     _addNpc(type: type, lane: lane, worldZ: spawnZ);
+  }
+
+  /// Pick an NPC movement type based on the lane and zone.
+  /// On walkways: right lane riders go same-direction, left lane riders go
+  /// opposite, middle (gap between walkways) has mixed foot traffic.
+  NpcType _typeForLane(int lane, Zone zone) {
+    if (zone.isWalkway) {
+      if (lane == 1) return NpcType.walkingSame;
+      if (lane == -1) return NpcType.walkingOpposite;
+      // Middle gap: mix of strollers and the occasional stander.
+      final roll = _random.nextDouble();
+      if (roll < 0.35) return NpcType.walkingSame;
+      if (roll < 0.65) return NpcType.walkingOpposite;
+      return NpcType.stationary;
+    }
+    if (zone.type == ZoneType.security) {
+      final roll = _random.nextDouble();
+      if (roll < 0.40) return NpcType.stationary;
+      if (roll < 0.70) return NpcType.walkingSame;
+      return NpcType.walkingOpposite;
+    }
+    final roll = _random.nextDouble();
+    if (roll < 0.35) return NpcType.walkingSame;
+    if (roll < 0.60) return NpcType.walkingOpposite;
+    // Higher stationary rate on side lanes — these are the "guests
+    // standing on the side" the player must avoid hitting.
+    if (lane == 0) return NpcType.stationary;
+    return _random.nextDouble() < 0.6
+        ? NpcType.stationary
+        : NpcType.walkingSame;
   }
 
   /// Spawn a group of 2-4 NPCs close together.
   void _spawnGroup(double spawnZ, Zone spawnZone) {
     final groupSize = 2 + _random.nextInt(3); // 2-4 NPCs
 
-    // Groups share a movement type and general direction
-    final groupRoll = _random.nextDouble();
-    NpcType groupType;
-    if (spawnZone.type == ZoneType.security) {
-      groupType = groupRoll < 0.5 ? NpcType.stationary : NpcType.walkingSame;
-    } else {
-      if (groupRoll < 0.45) {
-        groupType = NpcType.walkingSame;
-      } else if (groupRoll < 0.80) {
-        groupType = NpcType.walkingOpposite;
-      } else {
-        groupType = NpcType.stationary;
-      }
-    }
+    // Pick the primary lane up front so walkway groups inherit the lane's
+    // direction (right = same, left = opposite, middle = mixed).
+    final primaryLane = _randomLane();
+    final groupType = _typeForLane(primaryLane, spawnZone);
 
     // Groups share a base speed (with small per-member variation)
     final baseGroupSpeed = groupType == NpcType.stationary
         ? 0.0
         : (2.0 + _random.nextDouble() * 6.0);
-
-    // Pick a primary lane — group members can spill into adjacent lane
-    final primaryLane = _randomLane();
 
     for (int i = 0; i < groupSize; i++) {
       // Spread members along Z with small offsets (close together)

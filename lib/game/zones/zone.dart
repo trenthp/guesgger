@@ -21,7 +21,6 @@ class Zone {
   final Color roadColor;
   final List<ObstacleData> obstaclePool;
   final bool isWalkway;
-  final bool reversesDirection;
   final double spawnIntervalMin;
   final double spawnIntervalMax;
 
@@ -35,7 +34,6 @@ class Zone {
     required this.roadColor,
     required this.obstaclePool,
     this.isWalkway = false,
-    this.reversesDirection = false,
     this.spawnIntervalMin = 0.8,
     this.spawnIntervalMax = 1.6,
   });

@@ -18,6 +18,10 @@ class HudOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = zoneManager.getProgress(worldState.distanceTraveled);
+    final timeLeft = worldState.timeRemaining;
+    final timeFraction = (timeLeft / GameConfig.parkCloseTime).clamp(0.0, 1.0);
+    final isLowTime = timeLeft <= 30;
+    final timeColor = isLowTime ? GameTheme.heartFull : GameTheme.hudText;
 
     return SafeArea(
       child: Padding(
@@ -28,7 +32,6 @@ class HudOverlay extends StatelessWidget {
             // Top bar
             Row(
               children: [
-                // Score pill
                 _GlassCard(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -52,7 +55,6 @@ class HudOverlay extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                // Zone name pill
                 _GlassCard(
                   accent: true,
                   child: Row(
@@ -86,45 +88,41 @@ class HudOverlay extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                // Hearts
+                // Park-closing countdown
                 _GlassCard(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: List.generate(
-                      GameConfig.startingLives,
-                      (i) {
-                        final alive = i < worldState.lives;
-                        return Padding(
-                          padding: EdgeInsets.only(left: i > 0 ? 4 : 0),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            child: Icon(
-                              alive
-                                  ? Icons.favorite_rounded
-                                  : Icons.favorite_border_rounded,
-                              color: alive
-                                  ? GameTheme.heartFull
-                                  : GameTheme.heartEmpty,
-                              size: 20,
-                              shadows: alive
-                                  ? [
-                                      Shadow(
-                                        color: GameTheme.heartGlow,
-                                        blurRadius: 8,
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                    children: [
+                      Icon(
+                        Icons.access_time_rounded,
+                        color: timeColor,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _formatTime(timeLeft),
+                        style: TextStyle(
+                          color: timeColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                          shadows: isLowTime
+                              ? [
+                                  Shadow(
+                                    color: GameTheme.heartGlow,
+                                    blurRadius: 8,
+                                  ),
+                                ]
+                              : null,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            // Progress bar
+            // Distance progress bar
             Container(
               height: 4,
               decoration: BoxDecoration(
@@ -153,10 +151,46 @@ class HudOverlay extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 4),
+            // Park-closing timer bar
+            Container(
+              height: 3,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(2),
+                color: GameTheme.progressBarBg,
+              ),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: timeFraction,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(2),
+                    color: isLowTime
+                        ? GameTheme.heartFull
+                        : GameTheme.hudAccent,
+                    boxShadow: isLowTime
+                        ? [
+                            BoxShadow(
+                              color: GameTheme.heartFull.withValues(alpha: 0.5),
+                              blurRadius: 6,
+                            ),
+                          ]
+                        : null,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  String _formatTime(double seconds) {
+    final total = seconds.ceil().clamp(0, 9999);
+    final m = total ~/ 60;
+    final s = total % 60;
+    return '${m.toString()}:${s.toString().padLeft(2, '0')}';
   }
 }
 

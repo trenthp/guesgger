@@ -27,17 +27,21 @@ class ThreeBridgeClass {
     this.roadEdges = [];
     this.skyDome = null;
 
-    // Walkway escalator visuals
+    // Walkway escalator visuals — split into right (with you) and left
+    // (against you) strips, with the middle lane left as plain road.
     this.walkwayGroup = null; // container for all walkway geometry
-    this.walkwayGrooves = []; // cross-groove lines that scroll
-    this.walkwayChevrons = []; // directional arrows
+    this.walkwayGroovesRight = []; // cross-grooves on the right strip
+    this.walkwayGroovesLeft = [];  // cross-grooves on the left strip
+    this.walkwayChevronsRight = []; // arrows on the right strip
+    this.walkwayChevronsLeft = [];  // arrows on the left strip
 
     // Walkway clipping planes (Z-range visibility)
     this.walkwayClipStart = null;
     this.walkwayClipEnd = null;
     this.walkwayEntryRamp = null;
     this.walkwayExitRamp = null;
-    this.walkwayRoadOverlay = null;
+    this.walkwayRoadOverlayRight = null;
+    this.walkwayRoadOverlayLeft = null;
     this.walkwayGroundOverlay = null;
 
     // Effects
@@ -86,12 +90,16 @@ class ThreeBridgeClass {
     this.camera.position.set(0, 10, 5);
     this.camera.lookAt(0, 0, 60);
 
-    // Lighting — brighter for better model visibility
-    this.ambientLight = new THREE.AmbientLight(0x8888aa, 1.2);
+    // Lighting — late-afternoon golden hour. Intensities/colors are tinted
+    // toward dusk as the park-closing timer drops via setDaylight().
+    this.daylight = 1.0;
+
+    this.ambientLight = new THREE.AmbientLight(0xffd8a8, 0.9);
     this.scene.add(this.ambientLight);
 
-    this.directionalLight = new THREE.DirectionalLight(0xffeedd, 1.5);
-    this.directionalLight.position.set(5, 25, -10);
+    // Low-angle "sun" from the side — warm gold, casts long shadows
+    this.directionalLight = new THREE.DirectionalLight(0xffb070, 1.4);
+    this.directionalLight.position.set(20, 8, -6);
     this.directionalLight.castShadow = true;
     this.directionalLight.shadow.mapSize.width = 2048;
     this.directionalLight.shadow.mapSize.height = 2048;
@@ -103,13 +111,14 @@ class ThreeBridgeClass {
     this.directionalLight.shadow.camera.bottom = -30;
     this.scene.add(this.directionalLight);
 
-    const hemiLight = new THREE.HemisphereLight(0x6699dd, 0x444455, 0.8);
-    this.scene.add(hemiLight);
+    // Hemisphere — warm sky / cool earth fill
+    this.hemiLight = new THREE.HemisphereLight(0xffb877, 0x3a3247, 0.6);
+    this.scene.add(this.hemiLight);
 
-    // Fill light from front to illuminate objects facing the camera
-    const fillLight = new THREE.DirectionalLight(0xccddff, 0.6);
-    fillLight.position.set(0, 5, -15);
-    this.scene.add(fillLight);
+    // Subtle cool fill light from front
+    this.fillLight = new THREE.DirectionalLight(0xa3a8c8, 0.35);
+    this.fillLight.position.set(0, 5, -15);
+    this.scene.add(this.fillLight);
 
     // Build static environment
     this._buildGround();
@@ -210,8 +219,19 @@ class ThreeBridgeClass {
       this._updateZoneVisuals(data.zone);
     }
 
+    if (data.daylight !== undefined) {
+      this._setDaylight(data.daylight);
+    }
+
     if (data.scrollOffset !== undefined) {
       this._scrollGround(data.scrollOffset);
+    }
+
+    if (data.walkwayLaneScroll) {
+      this._scrollWalkwayLanes(
+        data.walkwayLaneScroll.right || 0,
+        data.walkwayLaneScroll.left || 0,
+      );
     }
 
     if (data.effects) {
@@ -494,119 +514,187 @@ class ThreeBridgeClass {
 
   _buildWalkway() {
     const laneWidth = 3.0;
-    const roadWidth = laneWidth * 3; // 9 units
-    const roadHalf = roadWidth / 2; // 4.5
+    const roadWidth = laneWidth * 3; // 9 units (-4.5 to +4.5)
+    const roadHalf = roadWidth / 2;
+    // Right walkway strip occupies lane +1 (center at +laneWidth = +3),
+    // left walkway strip occupies lane -1 (center at -laneWidth = -3),
+    // middle lane (lane 0) is left as plain road — the gap between walkways.
+    const stripWidth = laneWidth - 0.2; // small inset
+    // The Dart->scene X mapping negates worldX, so game-lane +1 (the player's
+    // right) renders at scene_x = -laneWidth on screen. The walkway side
+    // strips follow that same screen-relative orientation.
+    const rightCenterX = -laneWidth; // visually right side of screen
+    const leftCenterX = laneWidth;   // visually left side of screen
 
     // --- Clipping planes: restrict walkway geometry to a Z range ---
-    // Plane(normal, constant): passes if dot(normal, point) + constant >= 0
-    // Start clip: Z >= startZ  →  normal=(0,0,1), constant=-startZ
-    // End clip:   Z <= endZ    →  normal=(0,0,-1), constant=endZ
     this.walkwayClipStart = new THREE.Plane(new THREE.Vector3(0, 0, 1), 1000);
     this.walkwayClipEnd = new THREE.Plane(new THREE.Vector3(0, 0, -1), -1000);
     const clipPlanes = [this.walkwayClipStart, this.walkwayClipEnd];
 
     this.walkwayGroup = new THREE.Group();
-    // Always in the scene — clipping planes control visibility
     this.walkwayGroup.visible = true;
 
-    // --- Side rails (metallic handrails along edges) ---
+    // --- Outer side rails (along the outer edges of the road) ---
     const railMat = new THREE.MeshStandardMaterial({
       color: 0xaabbcc,
       roughness: 0.2,
       metalness: 0.8,
       clippingPlanes: clipPlanes,
     });
+    const barMat = new THREE.MeshStandardMaterial({
+      color: 0x445566,
+      roughness: 0.1,
+      metalness: 0.9,
+      clippingPlanes: clipPlanes,
+    });
+    const postMat = new THREE.MeshStandardMaterial({
+      color: 0x889aaa,
+      roughness: 0.3,
+      metalness: 0.7,
+      clippingPlanes: clipPlanes,
+    });
+    // Outer rails (one per side of the whole road)
     for (const side of [-1, 1]) {
-      const outerGeo = new THREE.BoxGeometry(0.15, 1.2, 400);
-      const outerRail = new THREE.Mesh(outerGeo, railMat);
+      const outerRail = new THREE.Mesh(
+        new THREE.BoxGeometry(0.15, 1.2, 400),
+        railMat,
+      );
       outerRail.position.set(side * (roadHalf + 0.1), 0.6, 100);
       outerRail.castShadow = true;
       this.walkwayGroup.add(outerRail);
 
-      const barGeo = new THREE.BoxGeometry(0.4, 0.08, 400);
-      const barMat = new THREE.MeshStandardMaterial({
-        color: 0x445566,
-        roughness: 0.1,
-        metalness: 0.9,
-        clippingPlanes: clipPlanes,
-      });
-      const bar = new THREE.Mesh(barGeo, barMat);
+      const bar = new THREE.Mesh(
+        new THREE.BoxGeometry(0.4, 0.08, 400),
+        barMat,
+      );
       bar.position.set(side * (roadHalf + 0.1), 1.2, 100);
       this.walkwayGroup.add(bar);
 
-      const postMat = new THREE.MeshStandardMaterial({
-        color: 0x889aaa,
-        roughness: 0.3,
-        metalness: 0.7,
-        clippingPlanes: clipPlanes,
-      });
       for (let z = 0; z < 400; z += 8) {
-        const postGeo = new THREE.BoxGeometry(0.1, 1.2, 0.1);
-        const post = new THREE.Mesh(postGeo, postMat);
+        const post = new THREE.Mesh(
+          new THREE.BoxGeometry(0.1, 1.2, 0.1),
+          postMat,
+        );
         post.position.set(side * (roadHalf + 0.1), 0.6, z);
         post.castShadow = true;
         this.walkwayGroup.add(post);
       }
     }
+    // Inner divider rails — flank the central no-walkway gap
+    for (const side of [-1, 1]) {
+      const innerX = side * (laneWidth / 2);
+      const innerRail = new THREE.Mesh(
+        new THREE.BoxGeometry(0.12, 1.0, 400),
+        railMat,
+      );
+      innerRail.position.set(innerX, 0.5, 100);
+      innerRail.castShadow = true;
+      this.walkwayGroup.add(innerRail);
 
-    // --- Metal surface grooves (cross lines across the road) ---
+      const innerBar = new THREE.Mesh(
+        new THREE.BoxGeometry(0.3, 0.06, 400),
+        barMat,
+      );
+      innerBar.position.set(innerX, 1.0, 100);
+      this.walkwayGroup.add(innerBar);
+
+      for (let z = 0; z < 400; z += 8) {
+        const post = new THREE.Mesh(
+          new THREE.BoxGeometry(0.08, 1.0, 0.08),
+          postMat,
+        );
+        post.position.set(innerX, 0.5, z);
+        post.castShadow = true;
+        this.walkwayGroup.add(post);
+      }
+    }
+
+    // --- Metal surface grooves on each strip (scroll independently) ---
     const grooveMat = new THREE.MeshBasicMaterial({
       color: 0x556677,
       clippingPlanes: clipPlanes,
     });
     for (let z = 0; z < 400; z += 1.5) {
-      const grooveGeo = new THREE.PlaneGeometry(roadWidth - 0.3, 0.08);
-      const groove = new THREE.Mesh(grooveGeo, grooveMat);
-      groove.rotation.x = -Math.PI / 2;
-      groove.position.set(0, 0.02, z);
-      this.walkwayGroup.add(groove);
-      this.walkwayGrooves.push(groove);
+      const grooveGeoR = new THREE.PlaneGeometry(stripWidth, 0.08);
+      const grooveR = new THREE.Mesh(grooveGeoR, grooveMat);
+      grooveR.rotation.x = -Math.PI / 2;
+      grooveR.position.set(rightCenterX, 0.02, z);
+      this.walkwayGroup.add(grooveR);
+      this.walkwayGroovesRight.push(grooveR);
+
+      const grooveL = new THREE.Mesh(grooveGeoR.clone(), grooveMat);
+      grooveL.rotation.x = -Math.PI / 2;
+      grooveL.position.set(leftCenterX, 0.02, z);
+      this.walkwayGroup.add(grooveL);
+      this.walkwayGroovesLeft.push(grooveL);
     }
 
-    // --- Directional chevrons (arrows showing movement direction) ---
-    const chevronMat = new THREE.MeshBasicMaterial({
-      color: 0x88ccff,
+    // --- Directional chevrons ---
+    // Build a single forward-pointing chevron template; left strip uses
+    // rotation.y = π on the wrapping group to flip it 180° around vertical
+    // so it unambiguously points the opposite direction.
+    const chevronRightMat = new THREE.MeshBasicMaterial({
+      color: 0x88ffaa,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.6,
       clippingPlanes: clipPlanes,
     });
-    for (let z = 0; z < 400; z += 12) {
-      const armGeo = new THREE.PlaneGeometry(0.15, 2.0);
-      const leftArm = new THREE.Mesh(armGeo, chevronMat);
-      leftArm.rotation.x = -Math.PI / 2;
-      leftArm.rotation.z = 0.4;
-      leftArm.position.set(-0.7, 0.025, z);
-      this.walkwayGroup.add(leftArm);
-      this.walkwayChevrons.push(leftArm);
+    const chevronLeftMat = new THREE.MeshBasicMaterial({
+      color: 0xff8888,
+      transparent: true,
+      opacity: 0.6,
+      clippingPlanes: clipPlanes,
+    });
+    const armGeo = new THREE.PlaneGeometry(0.14, 1.6);
+    const buildChevron = (mat, faceBackward) => {
+      const group = new THREE.Group();
+      const armL = new THREE.Mesh(armGeo.clone(), mat);
+      armL.rotation.x = -Math.PI / 2;
+      armL.rotation.z = 0.45;
+      armL.position.set(-0.55, 0.025, 0);
+      group.add(armL);
+      const armR = new THREE.Mesh(armGeo.clone(), mat);
+      armR.rotation.x = -Math.PI / 2;
+      armR.rotation.z = -0.45;
+      armR.position.set(0.55, 0.025, 0);
+      group.add(armR);
+      if (faceBackward) group.rotation.y = Math.PI;
+      return group;
+    };
+    for (let z = 0; z < 400; z += 10) {
+      const rChev = buildChevron(chevronRightMat, false);
+      rChev.position.set(rightCenterX, 0, z);
+      this.walkwayGroup.add(rChev);
+      this.walkwayChevronsRight.push(rChev);
 
-      const rightArm = new THREE.Mesh(armGeo.clone(), chevronMat);
-      rightArm.rotation.x = -Math.PI / 2;
-      rightArm.rotation.z = -0.4;
-      rightArm.position.set(0.7, 0.025, z);
-      this.walkwayGroup.add(rightArm);
-      this.walkwayChevrons.push(rightArm);
+      const lChev = buildChevron(chevronLeftMat, true);
+      lChev.position.set(leftCenterX, 0, z);
+      this.walkwayGroup.add(lChev);
+      this.walkwayChevronsLeft.push(lChev);
     }
 
-    // --- Raised edge strips ---
+    // --- Raised edge strips along the walkway perimeters ---
     const stripMat = new THREE.MeshStandardMaterial({
       color: 0x333333,
       roughness: 0.9,
       metalness: 0.0,
       clippingPlanes: clipPlanes,
     });
-    for (const side of [-1, 1]) {
-      const stripGeo = new THREE.BoxGeometry(0.3, 0.06, 400);
-      const strip = new THREE.Mesh(stripGeo, stripMat);
-      strip.position.set(side * (roadHalf - 0.15), 0.03, 100);
-      this.walkwayGroup.add(strip);
+    for (const centerX of [leftCenterX, rightCenterX]) {
+      for (const side of [-1, 1]) {
+        const strip = new THREE.Mesh(
+          new THREE.BoxGeometry(0.2, 0.06, 400),
+          stripMat,
+        );
+        strip.position.set(centerX + side * (stripWidth / 2), 0.03, 100);
+        this.walkwayGroup.add(strip);
+      }
     }
 
-    // --- Road and ground overlays (clipped to walkway Z range) ---
-    // These sit just above the base road/ground so the walkway section
-    // shows a different color without changing the global surface.
-    const roadOverlayGeo = new THREE.PlaneGeometry(roadWidth, 400);
+    // --- Road overlays for each strip (only the strip changes color) ---
+    const roadOverlayGeoR = new THREE.PlaneGeometry(stripWidth, 400);
     const roadOverlayMat = new THREE.MeshStandardMaterial({
-      color: 0x6B7B8D, // walkway road color
+      color: 0x6B7B8D,
       roughness: 0.3,
       metalness: 0.4,
       clippingPlanes: clipPlanes,
@@ -614,15 +702,21 @@ class ThreeBridgeClass {
       polygonOffsetFactor: -1,
       polygonOffsetUnits: -1,
     });
-    this.walkwayRoadOverlay = new THREE.Mesh(roadOverlayGeo, roadOverlayMat);
-    this.walkwayRoadOverlay.rotation.x = -Math.PI / 2;
-    this.walkwayRoadOverlay.position.set(0, -0.01, 100);
-    this.walkwayRoadOverlay.receiveShadow = true;
-    this.walkwayGroup.add(this.walkwayRoadOverlay);
+    this.walkwayRoadOverlayRight = new THREE.Mesh(roadOverlayGeoR, roadOverlayMat);
+    this.walkwayRoadOverlayRight.rotation.x = -Math.PI / 2;
+    this.walkwayRoadOverlayRight.position.set(rightCenterX, -0.01, 100);
+    this.walkwayRoadOverlayRight.receiveShadow = true;
+    this.walkwayGroup.add(this.walkwayRoadOverlayRight);
+
+    this.walkwayRoadOverlayLeft = new THREE.Mesh(roadOverlayGeoR.clone(), roadOverlayMat);
+    this.walkwayRoadOverlayLeft.rotation.x = -Math.PI / 2;
+    this.walkwayRoadOverlayLeft.position.set(leftCenterX, -0.01, 100);
+    this.walkwayRoadOverlayLeft.receiveShadow = true;
+    this.walkwayGroup.add(this.walkwayRoadOverlayLeft);
 
     const groundOverlayGeo = new THREE.PlaneGeometry(60, 400);
     const groundOverlayMat = new THREE.MeshStandardMaterial({
-      color: 0x3A3A4A, // walkway ground color
+      color: 0x3A3A4A,
       roughness: 0.9,
       metalness: 0.0,
       clippingPlanes: clipPlanes,
@@ -638,7 +732,7 @@ class ThreeBridgeClass {
 
     this.scene.add(this.walkwayGroup);
 
-    // --- Entry/exit ramp plates (positioned dynamically, not clipped) ---
+    // --- Entry/exit ramp plates (only span the side strips, not the gap) ---
     const rampGeo = new THREE.BoxGeometry(roadWidth + 1.0, 0.12, 1.5);
     const rampMat = new THREE.MeshStandardMaterial({
       color: 0x667788,
@@ -658,12 +752,25 @@ class ThreeBridgeClass {
 
   _buildSky() {
     const skyGeo = new THREE.PlaneGeometry(400, 200);
+    // Late-afternoon palette interpolated toward dusk by the daylight uniform.
+    this.skyAfternoon = {
+      top: new THREE.Color(0x3b3568),
+      mid: new THREE.Color(0x7a4a6e),
+      bottom: new THREE.Color(0xd17a45),
+      horizon: new THREE.Color(0xffb066),
+    };
+    this.skyDusk = {
+      top: new THREE.Color(0x0e0f26),
+      mid: new THREE.Color(0x26143a),
+      bottom: new THREE.Color(0x4a1830),
+      horizon: new THREE.Color(0x7a2030),
+    };
     const skyMat = new THREE.ShaderMaterial({
       uniforms: {
-        topColor: { value: new THREE.Color(0x1a1a2e) },
-        midColor: { value: new THREE.Color(0x16213e) },
-        bottomColor: { value: new THREE.Color(0x0f3460) },
-        horizonColor: { value: new THREE.Color(0xe94560) },
+        topColor: { value: this.skyAfternoon.top.clone() },
+        midColor: { value: this.skyAfternoon.mid.clone() },
+        bottomColor: { value: this.skyAfternoon.bottom.clone() },
+        horizonColor: { value: this.skyAfternoon.horizon.clone() },
       },
       vertexShader: `
         varying vec2 vUv;
@@ -698,6 +805,40 @@ class ThreeBridgeClass {
     this.skyDome.position.set(0, 60, 200);
     this.skyDome.renderOrder = -1;
     this.scene.add(this.skyDome);
+  }
+
+  /// Lerp sky colors and light intensities from late-afternoon (1.0) toward
+  /// dusk (0.0). Driven by the park-closing timer so the world physically
+  /// gets darker as the player runs out of time.
+  _setDaylight(value) {
+    const v = Math.max(0, Math.min(1, value));
+    if (this.daylight === v) return;
+    this.daylight = v;
+
+    if (this.skyDome && this.skyAfternoon && this.skyDusk) {
+      const u = this.skyDome.material.uniforms;
+      u.topColor.value.copy(this.skyDusk.top).lerp(this.skyAfternoon.top, v);
+      u.midColor.value.copy(this.skyDusk.mid).lerp(this.skyAfternoon.mid, v);
+      u.bottomColor.value
+        .copy(this.skyDusk.bottom)
+        .lerp(this.skyAfternoon.bottom, v);
+      u.horizonColor.value
+        .copy(this.skyDusk.horizon)
+        .lerp(this.skyAfternoon.horizon, v);
+    }
+
+    // Scale light intensities — keep a minimum so models stay legible at dusk.
+    const lightFloor = 0.35;
+    const k = lightFloor + v * (1.0 - lightFloor);
+    if (this.ambientLight) this.ambientLight.intensity = 0.9 * k;
+    if (this.directionalLight) this.directionalLight.intensity = 1.4 * k;
+    if (this.hemiLight) this.hemiLight.intensity = 0.6 * k;
+    if (this.fillLight) this.fillLight.intensity = 0.35 * k;
+
+    // Renderer exposure dips slightly at dusk for an overall darker tone.
+    if (this.renderer) {
+      this.renderer.toneMappingExposure = 0.85 + v * 0.45;
+    }
   }
 
   _updateZoneVisuals(zone) {
@@ -766,14 +907,23 @@ class ThreeBridgeClass {
     for (const line of this.laneLines) {
       line.position.z = ((line.position.z - offset) % 400 + 400) % 400;
     }
-    // Scroll walkway grooves and chevrons when visible
-    if (this.walkwayGroup && this.walkwayGroup.visible) {
-      for (const groove of this.walkwayGrooves) {
-        groove.position.z = ((groove.position.z - offset) % 400 + 400) % 400;
-      }
-      for (const chevron of this.walkwayChevrons) {
-        chevron.position.z = ((chevron.position.z - offset) % 400 + 400) % 400;
-      }
+  }
+
+  _scrollWalkwayLanes(rightOffset, leftOffset) {
+    if (!this.walkwayGroup || !this.walkwayGroup.visible) return;
+    // Right strip: scroll grooves + chevrons toward camera (with player).
+    for (const g of this.walkwayGroovesRight) {
+      g.position.z = ((g.position.z - rightOffset) % 400 + 400) % 400;
+    }
+    for (const c of this.walkwayChevronsRight) {
+      c.position.z = ((c.position.z - rightOffset) % 400 + 400) % 400;
+    }
+    // Left strip: scroll opposite. leftOffset is already negative from Dart.
+    for (const g of this.walkwayGroovesLeft) {
+      g.position.z = ((g.position.z - leftOffset) % 400 + 400) % 400;
+    }
+    for (const c of this.walkwayChevronsLeft) {
+      c.position.z = ((c.position.z - leftOffset) % 400 + 400) % 400;
     }
   }
 }
