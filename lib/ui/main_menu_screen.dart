@@ -52,6 +52,17 @@ class _MainMenuScreenState extends State<MainMenuScreen>
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    // Scale the hero between ~0.55x on tiny phones and 1.0x at tablet width.
+    final heroScale = (screenWidth / 600).clamp(0.55, 1.0);
+    final iconSize = 64.0 * heroScale;
+    final titleFontSize = 64.0 * heroScale;
+    final titleLetterSpacing = 12.0 * heroScale;
+    final taglineFontSize = (14.0 * heroScale).clamp(11.0, 14.0);
+    // Cap the hero block so the title can't grow past the viewport even at
+    // max scale, and FittedBox can scale it down further when needed.
+    final heroMaxWidth = screenWidth - 32;
+
     return Scaffold(
       body: AnimatedBuilder(
         animation: _bgController,
@@ -134,28 +145,37 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                                 GameTheme.hudAccent,
                               ],
                             ).createShader(bounds),
-                            child: const Icon(
+                            child: Icon(
                               Icons.attractions,
-                              size: 64,
+                              size: iconSize,
                               color: Colors.white,
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          ShaderMask(
-                            shaderCallback: (bounds) => const LinearGradient(
-                              colors: [
-                                GameTheme.buttonPrimary,
-                                Color(0xFFFFEB3B),
-                                GameTheme.buttonPrimary,
-                              ],
-                            ).createShader(bounds),
-                            child: const Text(
-                              'GUESGGER',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 64,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 12,
+                          SizedBox(height: 16 * heroScale),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: heroMaxWidth,
+                            ),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: ShaderMask(
+                                shaderCallback: (bounds) =>
+                                    const LinearGradient(
+                                  colors: [
+                                    GameTheme.buttonPrimary,
+                                    Color(0xFFFFEB3B),
+                                    GameTheme.buttonPrimary,
+                                  ],
+                                ).createShader(bounds),
+                                child: Text(
+                                  'GUESGGER',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: titleFontSize,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: titleLetterSpacing,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -164,16 +184,19 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    'Navigate from the parking lot to the park entrance!',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 14,
-                      letterSpacing: 1,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      'Navigate from the parking lot to the park entrance!',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: taglineFontSize,
+                        letterSpacing: 1,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 50),
+                  SizedBox(height: 50 * heroScale),
                   // Pulsing start button
                   AnimatedBuilder(
                     animation: _pulseController,
