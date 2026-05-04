@@ -97,9 +97,10 @@ class ThreeBridgeClass {
     this.ambientLight = new THREE.AmbientLight(0xffd8a8, 0.9);
     this.scene.add(this.ambientLight);
 
-    // Low-angle "sun" from the side — warm gold, casts long shadows
+    // Late-afternoon "sun" — warm gold, angled but high enough that cast
+    // shadows don't stretch into detached parallelograms on the road.
     this.directionalLight = new THREE.DirectionalLight(0xffb070, 1.4);
-    this.directionalLight.position.set(20, 8, -6);
+    this.directionalLight.position.set(12, 18, -4);
     this.directionalLight.castShadow = true;
     this.directionalLight.shadow.mapSize.width = 2048;
     this.directionalLight.shadow.mapSize.height = 2048;
@@ -110,6 +111,11 @@ class ThreeBridgeClass {
     this.directionalLight.shadow.camera.top = 30;
     this.directionalLight.shadow.camera.bottom = -30;
     this.scene.add(this.directionalLight);
+    // Aim the light down the road so the shadow frustum covers the visible
+    // play area instead of being centered at world origin (which clipped
+    // shadows roughly 20 units in front of the player).
+    this.directionalLight.target.position.set(0, 0, 60);
+    this.scene.add(this.directionalLight.target);
 
     // Hemisphere — warm sky / cool earth fill
     this.hemiLight = new THREE.HemisphereLight(0xffb877, 0x3a3247, 0.6);

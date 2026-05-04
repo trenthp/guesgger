@@ -42,7 +42,12 @@ class GameConfig {
 
   // Park-closing timer (seconds). Game ends in failure if this hits 0
   // before the player reaches the park entrance.
-  static const double parkCloseTime = 180.0;
+  static const double parkCloseTime = 120.0;
+
+  // After the world fully transitions to dusk, the park stays dark for this
+  // many seconds before closing — gives the player a "park is closing now,
+  // hurry" beat instead of cutting straight from daylight to game over.
+  static const double parkDarkPhaseDuration = 25.0;
 
   // Spawn intervals (seconds) - min and max per zone
   static const double spawnIntervalMax = 1.8;

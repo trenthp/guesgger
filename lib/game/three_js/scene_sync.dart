@@ -303,11 +303,20 @@ class SceneSync {
     }
 
     // --- Daylight (1.0 late afternoon → 0.0 dusk) ---
-    // sqrt curve keeps the world bright through most of the run; the
-    // darkening becomes dramatic only in the last third as time runs out.
-    final timeFraction =
-        (worldState.timeRemaining / GameConfig.parkCloseTime).clamp(0.0, 1.0);
-    final daylight = sqrt(timeFraction);
+    // Linear fade to dusk over the first part of the run, then full dusk
+    // for the final [parkDarkPhaseDuration] seconds before the park closes
+    // — so the player sees "it's getting dark, the park is about to close"
+    // before time actually runs out.
+    final daylightDuration =
+        GameConfig.parkCloseTime - GameConfig.parkDarkPhaseDuration;
+    final double daylight;
+    if (worldState.timeRemaining > GameConfig.parkDarkPhaseDuration) {
+      final t = (worldState.timeRemaining - GameConfig.parkDarkPhaseDuration) /
+          daylightDuration;
+      daylight = t.clamp(0.0, 1.0);
+    } else {
+      daylight = 0.0;
+    }
     update['daylight'] = daylight;
 
     // --- Ground scroll ---
